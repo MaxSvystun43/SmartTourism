@@ -106,6 +106,7 @@ public class DijkstraSorver
         return bestRoute;
     }
 
+
     private IEnumerable<IEnumerable<T>> GetPermutations<T>(IEnumerable<T> list, int length)
     {
         if (length == 1)

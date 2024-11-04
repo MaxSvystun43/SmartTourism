@@ -31,11 +31,20 @@ internal static class GeoEndpoints
             
             int startNode = 0; // Starting position (ID)
             int endNode = request.Locations.Count - 1;   // Ending position (ID)
-            var waypoints =  Enumerable.Range(1, request.Locations.Count - 1).ToList();; // Other waypoints to visit
+            var waypoints =  Enumerable.Range(1, request.Locations.Count - 1).ToList(); // Other waypoints to visit
             var shortestPath = routeFinder.FindShortestRoute(startNode, endNode, waypoints);
+
+            var resultRoute = new List<LocationModel>();
+            
+            foreach (var node in shortestPath[..^1])
+            {
+                resultRoute.Add(request.Locations[node]);
+            }
             
             Log.Information("Result path shortest {@Result}", shortestPath);
-            return Results.Ok(results);
+            Log.Debug("Result shortest route {@Result}", resultRoute);
+            
+            return Results.Ok(resultRoute);
         });
 
         return app;

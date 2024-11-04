@@ -22,7 +22,7 @@ const createRoutineMachineLayer = ({waypoints, onClick}) => {
 
     instance.on('routesfound', function (e : any) {
         const distance = e.routes[0].instructions;
-        onClick(distance);
+        onClick(JSON.stringify(distance));
     });
 
     return instance;

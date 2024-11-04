@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import {Button} from "antd";
 import DirectionList from "../components/DirectionList.tsx";
 import DirectionStep from "../types/DirectionStep.tsx";
+import Locations from "../types/Locations.tsx";
 
 function Map() {
     const ClickHandler = ({ setMarkers }: { setMarkers: React.Dispatch<React.SetStateAction<LatLng[]>> }) => {
@@ -23,7 +24,7 @@ function Map() {
     const [routeVisible, setRouteVisible] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0); // Key to refresh RoutingMachine
     const [instructions, setInstructions] = useState(""); // Key to refresh RoutingMachine
-    const [data, setData] = useState(""); // Key to refresh RoutingMachine
+    const [data, setData] = useState<Locations[]>(); // Key to refresh RoutingMachine
 
 
     const handleRouteButtonClick = () => {
@@ -49,10 +50,14 @@ function Map() {
         }        
         await fetch('https://localhost:7148/api/geo/get-routes', requestOptions)
             .then(async response => {
-                const data = await response.json();
+                const data : Locations[] = await response.json();
 
                 console.log(JSON.stringify(data))
                 setData(data);
+                const latLngArray: LatLng[] = data.map(item => new LatLng(item.location[1], item.location[0]));
+                setMarkers(latLngArray)
+                
+                console.log("markers is " + JSON.stringify(markers));
             });
     }
     
@@ -78,7 +83,7 @@ function Map() {
                     />
                     <ClickHandler setMarkers={setMarkers}/>
 
-                    {markers.map((position, idx) => (
+                    {markers.length > 0 && markers.map((position, idx) => (
                         <Marker key={idx} position={position}></Marker>
                     ))}
                     {routeVisible && <RoutingMachine key={refreshKey} waypoints={markers} onClick={addInstructions}/>}
@@ -89,7 +94,7 @@ function Map() {
                         Run route
                     </Button>                    
                     
-                    {routeVisible && (
+                    {routeVisible && (instructions !== null || instructions !== "") && (
                         <div className="route-display">
                             <DirectionList instructions={instructions} />
                         </div>
@@ -97,8 +102,17 @@ function Map() {
                     <Button onClick={handleFindBestRouteClick}>
                         Find route
                     </Button>
-                    <div>{JSON.stringify(data)}</div>
-                    
+                    {(data !== undefined) && (
+                        <div>
+                            <ul>
+                                {data.map((route, idx) =>(
+                                    <li key={idx}>
+                                        {JSON.stringify(route)}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}                    
                 </div>
             </div>
         </>

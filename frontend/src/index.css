@@ -109,6 +109,6 @@ button {
   border-radius: 5px;
 }
 
-/*.leaflet-control-container .leaflet-routing-container-hide {*/
-/*  display: none;*/
-/*}*/
+.leaflet-control-container .leaflet-routing-container-hide {
+  display: none;
+}
