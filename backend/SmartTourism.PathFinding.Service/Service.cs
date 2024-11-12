@@ -10,7 +10,7 @@ public class DijkstraSorver
         {
             foreach (var edge in edgeList)
             {
-                AddRoute(edge.SourceIndex, edge.TargetIndex, edge.Distance, edge.Time);
+                AddRoute(edge.SourceIndex, edge.TargetIndex, edge.Distance ?? 0, edge.Time ?? 0);
             }
         }
     }
@@ -44,7 +44,7 @@ public class DijkstraSorver
 
             foreach (var edge in _adjacencyList[currentNode])
             {
-                int newDistance = currentDistance + edge.Distance;
+                int newDistance = currentDistance + edge.Distance ?? 0;
 
                 if (newDistance < distances[edge.TargetIndex])
                 {

@@ -6,7 +6,8 @@ namespace GeoApiService;
 
 public interface IGeoapifyService
 {
-    Task<GeoApiResponse> GetPlacesAsync(GeoApiRequest request);
+    Task<List<PlacesToVisit>> GetPlacesAsync(GeoApiRequest request);
 
     Task<RouteResponse> GetPlaceRoutesAsync(List<LocationModel> locations);
+    Task<RouteResponse> GetPlaceRoutesAsync(LocationModel startLocation, List<LocationModel> endLocation);
 }

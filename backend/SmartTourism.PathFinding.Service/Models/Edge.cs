@@ -2,15 +2,7 @@
 
 public class Edge
 {
-    public Location From { get; set; }
-    public Location To { get; set; }
+    public required Location From { get; set; }
+    public required Location To { get; set; }
     public double Distance { get; set; }
-    public double RoadTime { get; set; } 
-    
-    public Edge(Location from, Location to, double roadTime)
-    {
-        From = from;
-        To = to;
-        RoadTime = roadTime;
-    }
 }

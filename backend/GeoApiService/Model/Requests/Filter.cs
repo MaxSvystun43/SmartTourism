@@ -2,7 +2,7 @@
 
 public sealed class Filter
 {
-    public required FilterType FilterType { get; set; } = FilterType.Circle;
+    public FilterType FilterType { get; set; } = FilterType.Circle;
     public required double Longitude { get; set; }
     public required double Latitude { get; set; }
     public required int RadiusInMeters { get; set; }

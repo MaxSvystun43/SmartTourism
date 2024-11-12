@@ -4,8 +4,8 @@ namespace GeoApiService.Model.Responses;
 
 public class SourceToTarget
 {
-    public int Distance { get; set; }
-    public int Time { get; set; }
+    public int? Distance { get; set; }
+    public int? Time { get; set; }
     [JsonPropertyName("source_index")]
     public int SourceIndex { get; set; }
     [JsonPropertyName("target_index")]

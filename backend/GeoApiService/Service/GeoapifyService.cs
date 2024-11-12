@@ -1,4 +1,6 @@
-﻿using GeoApiService.Model;
+﻿using GeoApiService.Extensions;
+using GeoApiService.Model;
+using GeoApiService.Model.Enums;
 using GeoApiService.Model.Extensions;
 using GeoApiService.Model.Requests;
 using GeoApiService.Model.Responses;
@@ -10,34 +12,36 @@ namespace GeoApiService.Service;
 public class GeoapifyService : IGeoapifyService
 {
     private readonly IGeoapifyApi _geoapifyApi;
-    const string ApiKey = "d14bbbf1347b41b288e27f6d9432932e"; 
+    private const string ApiKey = "d14bbbf1347b41b288e27f6d9432932e"; 
     
     public GeoapifyService(IGeoapifyApi geoapifyApi)
     {
         _geoapifyApi = geoapifyApi;
     }
     
-    public async Task<GeoApiResponse> GetPlacesAsync(GeoApiRequest request)
+    public async Task<List<PlacesToVisit>> GetPlacesAsync(GeoApiRequest request)
     {
+        var resultPlaces = new List<PlacesToVisit>();
         try
         {
-            var categories = "commercial,entertainment,national_park,tourism,catering";
-            var filter = "circle:26.240300448673793,50.6225296,5000";
-            var bias = "proximity:26.240300448673793,50.6225296";
-            var limit = 10;
-
+            if (request.Categories.Contains(Category.Catering))
+            {
+                request.Categories.Remove(Category.Catering);
+                
+                resultPlaces.AddRange(await GetCafeteriaPlaces(request));
+            }
+            
+            Log.Information("Getting all places to visit");
             var newCategories = request.Categories.ToSnakeString();
             var newFilter = request.Filter.ToString();
             var newBias = request.Bias.ToString();
-
             var response = await _geoapifyApi.GetPlacesAsync(newCategories, newFilter, newBias, request.Limit, ApiKey);
+            
+            Log.Information("Response data from geoapify : {@Response}", response);
 
-            // Process the response
-            foreach (var place in response.Features)
-            {
-                Log.Information("Name: {@place}", place);
-            }
-            return response;
+            resultPlaces.AddRange(response.Features.Select(p => p.ToPlacesToVisit()));
+            
+            return resultPlaces;
         }
         catch (ApiException apiEx)
         {
@@ -51,7 +55,6 @@ public class GeoapifyService : IGeoapifyService
             throw;
         }
     }
-
 
 
     public async Task<RouteResponse> GetPlaceRoutesAsync(List<LocationModel> locations)
@@ -69,7 +72,7 @@ public class GeoapifyService : IGeoapifyService
             
             var response = await _geoapifyApi.GetRoadsAsync(ApiKey, routeData);
             
-            Log.Information("Response data from geoapify : {@Response}", response);
+            Log.Debug("Response data from geoapify : {@Response}", response);
 
             return response;
 
@@ -86,4 +89,53 @@ public class GeoapifyService : IGeoapifyService
             throw;
         }
     }
+    public async Task<RouteResponse> GetPlaceRoutesAsync(LocationModel startLocation, List<LocationModel> endLocation)
+    {
+        try
+        {
+            var routeData = new RouteRequest()
+            {
+                Mode = "drive",
+                Sources = [startLocation],
+                Targets = endLocation,
+                Type = "short",
+                Traffic = "approximated"
+            };
+            
+            Log.Information("Route data {@Data}", routeData);
+            
+            var response = await _geoapifyApi.GetRoadsAsync(ApiKey, routeData);
+            
+            Log.Debug("Response data from geoapify : {@Response}", response);
+
+            return response;
+
+        }
+        catch (ApiException apiEx)
+        {
+            Log.Error($"API error: {apiEx.Message}");
+            Log.Error($"Status code: {apiEx.StatusCode}");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"An error occurred: {ex.Message}");
+            throw;
+        }
+    }
+
+    private async Task<IReadOnlyList<PlacesToVisit>> GetCafeteriaPlaces(GeoApiRequest request)
+    {
+        Log.Information("Getting data about caterings");
+        var cateringCategory = "catering";
+        var filter = request.Filter.ToString();
+        var bias = request.Bias.ToString();
+
+        var response = await _geoapifyApi.GetPlacesAsync(cateringCategory, filter, bias, request.Limit/4, ApiKey);
+        
+        Log.Debug("Got data about catering {@Response}", response);
+        
+        return response.Features.Select(p => p.ToPlacesToVisit()).ToList();
+    }
+
 }
