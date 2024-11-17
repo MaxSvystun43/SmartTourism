@@ -77,9 +77,10 @@ internal static class GeoEndpoints
             [FromBody] GeoApiRequest request
         ) =>
         {
-            var data = await service.GetSmartTourismSuggestionsAsync(request);
+            //var data = await service.GetSmartTourismSuggestionsAsync(request);
             
-            return Results.Ok(data);
+            service.TestSolver();
+            return Results.Ok();
         });
 
         return app;

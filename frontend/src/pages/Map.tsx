@@ -9,6 +9,8 @@ import Locations from "../types/Locations.tsx";
 import PlacesRequest from "../types/PlacesRequest.tsx";
 import Category from "../types/Categories.tsx";
 import Place from "../types/Place.tsx";
+import GeoApiModal from "../components/GeoApiModel.tsx";
+import {GeoApiProvider} from "../components/contexts/GeoApiContext.tsx";
 
 function Map() {
     const ClickHandler = ({ setMarkers }: { setMarkers: React.Dispatch<React.SetStateAction<LatLng[]>> }) => {
@@ -28,6 +30,12 @@ function Map() {
     const [instructions, setInstructions] = useState(""); // Key to refresh RoutingMachine
     const [data, setData] = useState<Locations[]>(); // Key to refresh RoutingMachine
     const [places, setPlacesData] = useState<Place[]>(); // Key to refresh RoutingMachine
+    const [formData, setFormData] = useState(null);
+
+    const handleFormSubmit = (data: any) => {
+        console.log("Received data from GeoApiForm:", data);
+        setFormData(data); // Save or process the form data as needed
+    };
 
 
     const handleRouteButtonClick = () => {
@@ -66,37 +74,34 @@ function Map() {
     
     
     const handleSomeNewButtonClick = async () => {
-        const data : PlacesRequest = {
-            categories : [Category.Catering],            
-            filter : {
-                longitude: 26.240300448673793,
-                latitude: 50.6225296,
-                radiusInMeters: 500,
-            },
-            bias : {
-                longitude: 26.240300448673793,
-                latitude: 50.6225296,
-            },
-            limit : 20,
+        if (!formData) {
+            console.warn("Form data is missing!");
+            return;
         }
-        console.log(JSON.stringify(data));
-        
+       console.log("data handler is " + JSON.stringify(formData));        
         const requestOptions = {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify(formData)
         }
-        
-        await fetch('https://localhost:7148/api/geo/get-places', requestOptions)
-            .then(async response => {
-                const data : Place[] = await response.json();
 
-                console.log(JSON.stringify(data))
-                setPlacesData(data);
-            });
-    }
+        try {
+            const response = await fetch("https://localhost:7148/api/geo/get-places", requestOptions);
+
+            if (!response.ok) {
+                throw new Error(`Error: ${response.statusText}`);
+            }
+
+            const data: Place[] = await response.json();
+            console.log("Response data:", JSON.stringify(data));
+            setPlacesData(data); // Save API response data to display or use elsewhere
+        } catch (error) {
+            console.error("Failed to fetch places:", error);
+        }
+    };
+    
     
     function addInstructions(instructions : any){
         console.log("AddInstruct")
@@ -166,6 +171,19 @@ function Map() {
                     <Button onClick={handleSomeNewButtonClick}>
                         Test Places
                     </Button>
+                    <GeoApiProvider>
+                        <GeoApiModal onSubmit={handleFormSubmit} 
+                        initialBias={{
+                            longitude : markers[0]?.lng ?? 0,
+                            latitude : markers[0]?.lat ?? 0
+                        }}
+                        initialFilter={{
+                            longitude : markers[0]?.lng ?? 0,
+                            latitude : markers[0]?.lat ?? 0,
+                            radiusInMeters : 5000
+                        }}
+                        />
+                    </GeoApiProvider>
                 </div>
             </div>
         </>
