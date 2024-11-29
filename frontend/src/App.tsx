@@ -8,8 +8,9 @@ import { MenuUnfoldOutlined, MenuFoldOutlined} from '@ant-design/icons'
 import {Route, Routes} from "react-router-dom";
 import Home from "./pages/Home.tsx";
 import Settings from "./pages/Settings.tsx";
-import FindRoute from "./pages/FindRoute.tsx";
 import Map from "./pages/Map.tsx";
+import {DiIntellij} from "react-icons/di";
+import DijstraTest from "./pages/DijstraTest.tsx";
 
 
 const { Header, Sider} = Layout;
@@ -53,6 +54,7 @@ function App() {
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/map" element={<Map/>} />
+                    <Route path="/dijstra-test" element={<DijstraTest/>} />
                     {/*<Route path="/find-route" element={<FindRoute/>} />*/}
                     <Route path="/settings" element={<Settings />} />
                 </Routes>

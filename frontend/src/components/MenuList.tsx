@@ -14,9 +14,14 @@ const MenuList : React.FC<MenuListProps> = ({darkTheme}) => {
                     Home
                 </Link>
             </Menu.Item>
-            <Menu.Item key="activity" icon={<AppstoreOutlined />}>
+            <Menu.Item key="map" icon={<AppstoreOutlined />}>
                 <Link to="/map">
                     Map
+                </Link>
+            </Menu.Item>
+            <Menu.Item key="dijstra-test" icon={<AppstoreOutlined />}>
+                <Link to="/dijstra-test">
+                    Dijstra Test
                 </Link>
             </Menu.Item>
             <Menu.Item key="settings" icon={<SettingOutlined />}>

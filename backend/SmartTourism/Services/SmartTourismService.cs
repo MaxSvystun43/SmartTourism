@@ -70,8 +70,6 @@ public class SmartTourismService
         return results;
     }
 
-
-
     public void TestSolver()
     {
         // Sample locations

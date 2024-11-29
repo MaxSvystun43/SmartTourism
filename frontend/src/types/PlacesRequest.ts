@@ -1,4 +1,4 @@
-﻿import Category from "./Categories.tsx";
+﻿import Category from "./Categories.ts";
 
 export interface PlacesRequest{
     limit : number;

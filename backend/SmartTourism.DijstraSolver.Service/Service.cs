@@ -1,26 +1,25 @@
-﻿using GeoApiService.Model.Responses;
+﻿using SmartTourism.DijstraSolver.Service.Models;
 
-public class DijkstraSorver
+namespace SmartTourism.DijstraSolver.Service;
+
+public class DijkstraTestSolver
 {
-    private readonly Dictionary<int, List<SourceToTarget>> _adjacencyList = new();
+    private readonly Dictionary<int, List<SourceTarget>> _adjacencyList = new();
     
-    public DijkstraSorver(RouteResponse results)
+    public DijkstraTestSolver(IEnumerable<SourceTarget> results)
     {
-        foreach (var edgeList in results.SourcesToTargets)
+        foreach (var edge in results)
         {
-            foreach (var edge in edgeList)
-            {
-                AddRoute(edge.SourceIndex, edge.TargetIndex, edge.Distance ?? 0, edge.Time ?? 0);
-            }
+            AddRoute(edge.SourceId, edge.TargetId, edge.Distance ?? Int32.MaxValue, edge.Time ?? Int32.MaxValue);
         }
     }
 
     public void AddRoute(int source, int target, int distance, int time)
     {
         if (!_adjacencyList.ContainsKey(source))
-            _adjacencyList[source] = new List<SourceToTarget>();
+            _adjacencyList[source] = new List<SourceTarget>();
 
-        _adjacencyList[source].Add(new SourceToTarget { SourceIndex = source, TargetIndex = target, Distance = distance, Time = time });
+        _adjacencyList[source].Add(new SourceTarget() { SourceId = source, TargetId = target, Distance = distance, Time = time });
     }
 
     public Dictionary<int, int> Dijkstra(int start)
@@ -46,10 +45,10 @@ public class DijkstraSorver
             {
                 int newDistance = currentDistance + edge.Distance ?? 0;
 
-                if (newDistance < distances[edge.TargetIndex])
+                if (newDistance < distances[edge.TargetId])
                 {
-                    distances[edge.TargetIndex] = newDistance;
-                    priorityQueue.Add((newDistance, edge.TargetIndex));
+                    distances[edge.TargetId] = newDistance;
+                    priorityQueue.Add((newDistance, edge.TargetId));
                 }
             }
         }
@@ -114,7 +113,6 @@ public class DijkstraSorver
 
         return GetPermutations(list, length - 1)
             .SelectMany(t => list.Where(e => !t.Contains(e)),
-                        (t1, t2) => t1.Concat(new T[] { t2 }));
+                (t1, t2) => t1.Concat(new T[] { t2 }));
     }
 }
-

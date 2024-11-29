@@ -57,15 +57,16 @@ public class GeoapifyService : IGeoapifyService
     }
 
 
-    public async Task<RouteResponse> GetPlaceRoutesAsync(List<LocationModel> locations)
+    public async Task<RouteResponse> GetPlaceRoutesAsync(IEnumerable<double[]> locations)
     {
+        var sources = locations.Select(location => new LocationModel() { Location = location}).ToList();
         try
         {
             var routeData = new RouteRequest()
             {
                 Mode = "drive",
-                Sources = locations,
-                Targets = locations,
+                Sources = sources,
+                Targets = sources,
                 Type = "short",
                 Traffic = "approximated"
             };

@@ -6,36 +6,45 @@ import 'leaflet/dist/leaflet.css';
 import {Button} from "antd";
 import DirectionList from "../components/DirectionList.tsx";
 import Locations from "../types/Locations.ts";
-import Place from "../types/Place.ts";
-import GeoApiModal from "../components/GeoApiModel.tsx";
-import {GeoApiProvider} from "../components/contexts/GeoApiContext.tsx";
+import TypeDropdown from "../components/TypeDropdown.tsx";
+import {MarkerType} from "../types/MarkerType.ts";
 
-function Map() {
+
+function DijstraMapTest() {
     const ClickHandler = ({ setMarkers }: { setMarkers: React.Dispatch<React.SetStateAction<LatLng[]>> }) => {
         // Hook to capture map events
         useMapEvents({
             click(e) {
-                const newMarker = e.latlng; // Get clicked LatLng
-                setMarkers((prevMarkers) => [...prevMarkers, newMarker]); // Add new marker to array
+                if (clickType == MarkerType.Waypoint) {
+                    const newMarker = e.latlng; // Get clicked LatLng
+                    setMarkers((prevMarkers) => [...prevMarkers, newMarker]); // Add new marker to array
+                }
+                if (clickType == MarkerType.Start) {
+                    setStartMarkers(e.latlng);
+                }
+                if (clickType == MarkerType.End) {
+                    setEndMarkers(e.latlng);
+                }
             },
         });
         return null; // No rendering needed for this component
     };
 
     const [markers, setMarkers] = useState<LatLng[]>([]);
+    const [startMarker, setStartMarkers] = useState<LatLng | null>(null);
+    const [endMarker, setEndMarkers] = useState<LatLng | null>(null);
     const [routeVisible, setRouteVisible] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0); // Key to refresh RoutingMachine
     const [instructions, setInstructions] = useState(""); // Key to refresh RoutingMachine
     const [data, setData] = useState<Locations[]>(); // Key to refresh RoutingMachine
-    const [places, setPlacesData] = useState<Place[]>(); // Key to refresh RoutingMachine
-    const [formData, setFormData] = useState(null);
-
-    const handleFormSubmit = (data: any) => {
-        console.log("Received data from GeoApiForm:", data);
-        setFormData(data); // Save or process the form data as needed
-    };
+    const [clickType, setClickType] = useState<MarkerType>(MarkerType.Start);
 
 
+    function handleChangeClickType(type : MarkerType){
+        console.log("Selected type:", type);
+        setClickType(type)
+    }
+    
     const handleRouteButtonClick = () => {
         if (markers.length > 0) {
             setRouteVisible(true); // Show the RoutingMachine when the button is clicked
@@ -70,37 +79,6 @@ function Map() {
             });
     }
     
-    
-    const handleSomeNewButtonClick = async () => {
-        if (!formData) {
-            console.warn("Form data is missing!");
-            return;
-        }
-       console.log("data handler is " + JSON.stringify(formData));        
-        const requestOptions = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
-        }
-
-        try {
-            const response = await fetch("https://localhost:7148/api/geo/get-places", requestOptions);
-
-            if (!response.ok) {
-                throw new Error(`Error: ${response.statusText}`);
-            }
-
-            const data: Place[] = await response.json();
-            console.log("Response data:", JSON.stringify(data));
-            setPlacesData(data); // Save API response data to display or use elsewhere
-        } catch (error) {
-            console.error("Failed to fetch places:", error);
-        }
-    };
-    
-    
     function addInstructions(instructions : any){
         console.log("AddInstruct")
         setInstructions(instructions);
@@ -129,20 +107,27 @@ function Map() {
                                 Marker {idx + 1}
                             </Popup>
                         </Marker>
-                    ))}
-                    {places !== undefined && places.map((position, idx) => (
-                        <Marker key={markers.length + idx} position={new LatLng(position.lat, position.lon)}>
-                            <Popup>
-                                <h2>{position.name}</h2>
-                                <p>{JSON.stringify(position.categories)}</p>
-                            </Popup>
-                        </Marker>
-                    ))}
-                    
+                    ))}                   
                     {routeVisible && <RoutingMachine key={refreshKey} waypoints={markers} onClick={addInstructions}/>}
+
+                    {/* Render Start Marker */}
+                    {startMarker && (
+                        <Marker position={startMarker}>
+                            <Popup>Start Marker</Popup>
+                        </Marker>
+                    )}
+
+                    {/* Render End Marker */}
+                    {endMarker && (
+                        <Marker position={endMarker}>
+                            <Popup>End Marker</Popup>
+                        </Marker>
+                    )}
                 </MapContainer>
             </div>
-                <div className="button-container">
+                <div className="button-container">                    
+                    <TypeDropdown onChoose={handleChangeClickType}/>
+                    
                     <Button onClick={handleRouteButtonClick} disabled={markers.length === 0}>
                         Run route
                     </Button>                    
@@ -166,26 +151,10 @@ function Map() {
                             </ul>
                         </div>
                     )}    
-                    <Button onClick={handleSomeNewButtonClick}>
-                        Test Places
-                    </Button>
-                    <GeoApiProvider>
-                        <GeoApiModal onSubmit={handleFormSubmit} 
-                        initialBias={{
-                            longitude : markers[0]?.lng ?? 0,
-                            latitude : markers[0]?.lat ?? 0
-                        }}
-                        initialFilter={{
-                            longitude : markers[0]?.lng ?? 0,
-                            latitude : markers[0]?.lat ?? 0,
-                            radiusInMeters : 5000
-                        }}
-                        />
-                    </GeoApiProvider>
-                </div>
+                 </div>
             </div>
         </>
     );
 }
 
-export default Map;
+export default DijstraMapTest;

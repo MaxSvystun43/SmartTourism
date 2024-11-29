@@ -1,4 +1,4 @@
-import PlacesRequest, {Bias, Filter} from "./PlacesRequest.tsx";
+import PlacesRequest, {Bias, Filter} from "./PlacesRequest.ts";
 
 interface GeoApiFormProps {
     initialBias: Bias;

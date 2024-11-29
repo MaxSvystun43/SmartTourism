@@ -1,7 +1,7 @@
 import React from "react";
 import {Form, Button, InputNumber, Select} from "antd";
 import Category from "../types/Categories";
-import PlacesRequest from "../types/PlacesRequest.tsx";
+import PlacesRequest from "../types/PlacesRequest.ts";
 import GeoApiFormProps from "../types/GeoApiFormProp.ts";
 
 // Define types for Filter, Bias, and GeoApiRequest

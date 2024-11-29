@@ -1,4 +1,5 @@
-﻿import DirectionStep from "../types/DirectionStep.tsx";
+﻿import DirectionStep from "../types/DirectionStep.ts";
+import React from "react";
 
 
 const DirectionsList: React.FC<{ instructions:string }> = ({ instructions }) => {
