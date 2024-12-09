@@ -7,7 +7,7 @@ public class PlacesToVisit
     /// <summary>
     /// The name of the geographical feature.
     /// </summary>
-    public string Name { get; set; }
+    public string? Name { get; set; }
     
     /// <summary>
     /// The longitude coordinate of the geographical feature.

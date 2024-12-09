@@ -25,7 +25,7 @@ internal static class GeoEndpoints
             return Results.Ok(results);
         });
         
-        app.MapPost("/api/geo/get-routes", async (
+        app.MapPost("/api/geo/dijstra/get-routes", async (
             [FromServices] IGeoapifyService service,
             [FromBody] FindRoute request
         ) =>
@@ -57,37 +57,26 @@ internal static class GeoEndpoints
         });
 
 
-        app.MapGet("/api/geo/get-neighbors", (
-        ) =>
-        {
-            var graph = new Graph();
-            graph.AddPosition(new Location { Id = Guid.NewGuid(), Latitude = 40.7128, Longitude = -74.0060, Name = "New York" }); // New York
-            graph.AddPosition(new Location { Id = Guid.NewGuid(), Latitude = 34.0522, Longitude = -118.2437, Name = "Los Angeles" }); // Los Angeles
-            graph.AddPosition(new Location { Id = Guid.NewGuid(), Latitude = 41.8781, Longitude = -87.6298, Name = "Chicago" }); // Chicago
-            graph.AddPosition(new Location { Id = Guid.NewGuid(), Latitude = 29.7604, Longitude = -95.3698, Name = "Houston" }); // Houston
-            graph.AddPosition(new Location { Id = Guid.NewGuid(), Latitude = 33.4484, Longitude = -112.0740, Name = "Phoenix" }); // Phoenix
-            
-            graph.BuildNearestNeighborsGraph(3);
-            
-            foreach (var edge in graph.Edges)
-            {
-                Log.Information($"Edge from Position {edge.From.Name} to Position {edge.To.Name} with distance {edge.Distance:F2} km");
-            }
-            
-            return Results.Ok(graph.Edges);
-        });
-        
-        
-        app.MapPost("/api/geo/get-neighbors-edges-new", async (
+        app.MapPost("/api/geo/pathfindin/get-routes", async (
             [FromServices] SmartTourismService service,
-            [FromBody] GeoApiRequest request
+            [FromBody] PathFindingRequest request
         ) =>
         {
-            //var data = await service.GetSmartTourismSuggestionsAsync(request);
+            var data = await service.Test(request);
             
-            service.TestSolver();
-            return Results.Ok();
+            return Results.Ok(data);
         });
+        
+        // app.MapGet("/api/geo/pathfindin/test", (
+        //     [FromServices] SmartTourismService service
+        // ) =>
+        // {
+        //     var data = service.Test();
+        //     
+        //     return Results.Ok(data);
+        // });
+
+
 
         return app;
     }

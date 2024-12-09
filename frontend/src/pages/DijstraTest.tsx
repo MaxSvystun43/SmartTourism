@@ -8,6 +8,15 @@ import DirectionList from "../components/DirectionList.tsx";
 import Locations from "../types/Locations.ts";
 import TypeDropdown from "../components/TypeDropdown.tsx";
 import {MarkerType} from "../types/MarkerType.ts";
+import "leaflet/dist/leaflet.css";
+import "leaflet-control-geocoder/dist/Control.Geocoder.css";
+import GeocoderComponent from "../components/GeocoderComponent.tsx";
+import StartGeocoder from "../components/StartGeocoder.tsx";
+import EndGeocoder from "../components/EndGeocoder.tsx";
+import L from 'leaflet';
+import '../styles/Geocoder.css';
+
+
 
 
 function DijstraMapTest() {
@@ -18,18 +27,35 @@ function DijstraMapTest() {
                 if (clickType == MarkerType.Waypoint) {
                     const newMarker = e.latlng; // Get clicked LatLng
                     setMarkers((prevMarkers) => [...prevMarkers, newMarker]); // Add new marker to array
+                    fetchAddress(newMarker);
                 }
                 if (clickType == MarkerType.Start) {
                     setStartMarkers(e.latlng);
                 }
                 if (clickType == MarkerType.End) {
                     setEndMarkers(e.latlng);
+                    console.log("end marker" + JSON.stringify(endMarker));
                 }
+                console.log(JSON.stringify([startMarker, ...markers, endMarker]));
             },
         });
         return null; // No rendering needed for this component
     };
 
+    const startIcon = L.icon({
+        iconUrl: "https://img.icons8.com/?size=100&id=13800&format=png",
+        iconSize: [33, 37],
+        iconAnchor: [15, 45],
+        popupAnchor: [0, -45],
+    });
+
+    const endIcon = L.icon({
+        iconUrl: "https://img.icons8.com/?size=100&id=13800&format=png",
+        iconSize: [33, 37],
+        iconAnchor: [15, 45],
+        popupAnchor: [0, -45],
+    });
+    
     const [markers, setMarkers] = useState<LatLng[]>([]);
     const [startMarker, setStartMarkers] = useState<LatLng | null>(null);
     const [endMarker, setEndMarkers] = useState<LatLng | null>(null);
@@ -38,12 +64,25 @@ function DijstraMapTest() {
     const [instructions, setInstructions] = useState(""); // Key to refresh RoutingMachine
     const [data, setData] = useState<Locations[]>(); // Key to refresh RoutingMachine
     const [clickType, setClickType] = useState<MarkerType>(MarkerType.Start);
+    const [addressMap, setAddressMap] = useState<Map<string, string>>(new Map());
 
 
     function handleChangeClickType(type : MarkerType){
         console.log("Selected type:", type);
         setClickType(type)
     }
+
+    const fetchAddress = async (latlng: LatLng) => {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`;
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            const address = data.display_name || "Address not found";
+            setAddressMap((prev) => new Map(prev).set(latlng.toString(), address));
+        } catch (error) {
+            console.error("Failed to fetch address:", error);
+        }
+    };
     
     const handleRouteButtonClick = () => {
         if (markers.length > 0) {
@@ -94,33 +133,34 @@ function DijstraMapTest() {
         <>
         <div className="map-grid">
             <div className="map-container">
-                <MapContainer center={[50.6199, 26.2516]} zoom={13} scrollWheelZoom={false}>
+                <MapContainer center={[50.6199, 26.2516]} zoom={13}>
                     <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
                     <ClickHandler setMarkers={setMarkers}/>
-
-                    {markers.length > 0 && markers.map((position, idx) => (
+                    <GeocoderComponent setMarkers={setMarkers} fetchAddress={fetchAddress} />
+                    <StartGeocoder setStartMarker={setStartMarkers} fetchAddress={fetchAddress} />
+                    <EndGeocoder setEndMarker={setEndMarkers} fetchAddress={fetchAddress} />
+                    {markers.map((position, idx) => (
                         <Marker key={idx} position={position}>
-                            <Popup>
-                                Marker {idx + 1}
-                            </Popup>
+                            <Popup>{addressMap.get(position.toString()) || "Loading address..."}</Popup>
                         </Marker>
-                    ))}                   
-                    {routeVisible && <RoutingMachine key={refreshKey} waypoints={markers} onClick={addInstructions}/>}
+                    ))}                 
+                    {routeVisible && startMarker && endMarker && <RoutingMachine 
+                        key={refreshKey} 
+                        waypoints={[startMarker, ...markers, endMarker]} 
+                        onClick={addInstructions}/>}
 
-                    {/* Render Start Marker */}
                     {startMarker && (
-                        <Marker position={startMarker}>
-                            <Popup>Start Marker</Popup>
+                        <Marker position={startMarker} icon={startIcon}>
+                            <Popup>{addressMap.get(startMarker.toString()) || "Start Location"}</Popup>
                         </Marker>
                     )}
 
-                    {/* Render End Marker */}
                     {endMarker && (
-                        <Marker position={endMarker}>
-                            <Popup>End Marker</Popup>
+                        <Marker position={endMarker} icon={endIcon}>
+                            <Popup>{addressMap.get(endMarker.toString()) || "End Location"}</Popup>
                         </Marker>
                     )}
                 </MapContainer>

@@ -44,3 +44,42 @@ Content-Type: application/json
   },
   "limit": 12
 }
+
+###
+
+ POST {{SmartTourism_HostAddress}}/api/geo/pathfindin/get-routes
+Content-Type: application/json
+
+{
+  "travel" : 2,
+  "alpha"  : 1.3,
+  "beta" : 3.6,
+  "start" : {
+    "location": [50.631928946570014, 26.21647723143714]
+  },
+  "end" : {
+    "location": [50.639769042449245, 26.289460427784984]
+  },
+"GeoApiRequest" : {
+  "categories": [
+    "Accommodation","Activity","Natural","Leisure" , "Catering"
+  ],
+  "filter": {
+    "longitude": 26.240300448673793,
+    "latitude": 50.6225296,
+    "radiusInMeters": 5000
+  },
+  "bias": {
+    "longitude": 26.240300448673793,
+    "latitude": 50.6225296
+  },
+  "limit": 30
+}
+}
+###
+
+GET {{SmartTourism_HostAddress}}/api/geo/pathfindin/test
+Content-Type: application/json
+
+###
+

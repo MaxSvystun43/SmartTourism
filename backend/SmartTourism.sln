@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartTourism.PathFinding.Se
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartTourism.DijstraSolver.Service", "SmartTourism.DijstraSolver.Service\SmartTourism.DijstraSolver.Service.csproj", "{9F8D7492-BEAB-47C1-A6DD-4E6C07A5C0FD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartTourism.RuleBase.Service", "SmartTourism.RuleBase.Service\SmartTourism.RuleBase.Service.csproj", "{E7EBC061-0291-4C2F-B9E5-F0084FB2ECE3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,6 +38,10 @@ Global
 		{9F8D7492-BEAB-47C1-A6DD-4E6C07A5C0FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9F8D7492-BEAB-47C1-A6DD-4E6C07A5C0FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9F8D7492-BEAB-47C1-A6DD-4E6C07A5C0FD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E7EBC061-0291-4C2F-B9E5-F0084FB2ECE3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E7EBC061-0291-4C2F-B9E5-F0084FB2ECE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E7EBC061-0291-4C2F-B9E5-F0084FB2ECE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E7EBC061-0291-4C2F-B9E5-F0084FB2ECE3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{4C2958FC-94AB-48D1-A9DA-44AE74ABE46F} = {03A8722D-EA09-4B38-99F7-1215594C9CA4}
@@ -44,5 +50,6 @@ Global
 		{08FA545C-E806-4D22-B4D9-5F905DC801F9} = {03A8722D-EA09-4B38-99F7-1215594C9CA4}
 		{727A3F59-849C-4056-A0B4-CDBC9F08F623} = {08FA545C-E806-4D22-B4D9-5F905DC801F9}
 		{9F8D7492-BEAB-47C1-A6DD-4E6C07A5C0FD} = {08FA545C-E806-4D22-B4D9-5F905DC801F9}
+		{E7EBC061-0291-4C2F-B9E5-F0084FB2ECE3} = {08FA545C-E806-4D22-B4D9-5F905DC801F9}
 	EndGlobalSection
 EndGlobal

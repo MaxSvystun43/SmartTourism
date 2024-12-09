@@ -1,123 +1,391 @@
 ﻿using GeoApiService;
 using GeoApiService.Model;
 using GeoApiService.Model.Requests;
+using OxyPlot;
+using OxyPlot.Annotations;
+using OxyPlot.Axes;
+using OxyPlot.Series;
 using Serilog;
+using SmartTourism.Endpoints.Models;
+using SmartTourism.Extensions;
+using SmartTourism.PathFinding.Service;
 using SmartTourism.PathFinding.Service.Models;
+using SmartTourism.RuleBase.Service.Models;
+using SmartTourism.RuleBase.Service.Services;
+using Location = SmartTourism.PathFinding.Service.Models.Location;
 
 namespace SmartTourism.Services;
 
 public class SmartTourismService
 {
     private readonly IGeoapifyService _geoapifyService;
-    private List<UpdatedEdge> _updatedEdges = new();
 
     public SmartTourismService(IGeoapifyService geoapifyService)
     {
         _geoapifyService = geoapifyService ?? throw new ArgumentNullException(nameof(geoapifyService));
     }
 
-    public async Task<List<PlacesToVisit>> GetSmartTourismSuggestionsAsync(GeoApiRequest request)
+    public async Task<string> Test(PathFindingRequest request)
     {
-        var results = await _geoapifyService.GetPlacesAsync(request);
-        var graph = new Graph();
-
-        foreach (var result in results)
-        {
-            graph.AddPosition(new Location
-            {
-                Id = Guid.NewGuid(),
-                Name = result.Name,
-                Latitude = result.Lat,
-                Longitude = result.Lon
-            });
-        }
+        // var points = new List<Point>
+        // {
+        //     new Point { Name = "A", Categories = "Start", Latitude = 40.7128, Longitude = -74.0060 },
+        //     new Point { Name = "B", Categories = "Restaurant", Latitude = 40.7308, Longitude = -73.9973 },
+        //     new Point { Name = "C", Categories = "Nature", Latitude = 40.7484, Longitude = -73.9857 },
+        //     new Point { Name = "D", Categories = "Nature", Latitude = 40.7580, Longitude = -73.9855 },
+        //     new Point { Name = "E", Categories = "End", Latitude = 40.7128, Longitude = -74.0059 },
+        //     new Point { Name = "F", Categories = "Restaurant", Latitude = 40.7192, Longitude = -74.0021 },
+        //     new Point { Name = "G", Categories = "Park", Latitude = 40.7407, Longitude = -73.9893 },
+        //     new Point { Name = "H", Categories = "Cultural", Latitude = 40.7295, Longitude = -73.9965 },
+        //     new Point { Name = "I", Categories = "Tourism", Latitude = 40.7411, Longitude = -73.9897 },
+        //     new Point { Name = "J", Categories = "Shopping", Latitude = 40.7589, Longitude = -73.9851 }
+        // };
         
-        graph.BuildNearestNeighborsGraph(4);
+        var results = await _geoapifyService.GetPlacesAsync(request.GeoApiRequest);
+
+        var startLocation = request.Start.ToPoint("Start");
+        var endLocation = request.End.ToPoint("End");
+        var points = results.Select(x => x.ToPoint()).ToList();
+        points.AddRange([startLocation, endLocation]);
+
         
-        Log.Information("Old edges to get this {@Edges}", graph.Edges);
+        var routeFinder = new RouteFinder(points, startLocation, endLocation);
+        
+        var route = routeFinder.FindRouteUsingBidirectualAStar();
+        
+        return route?.Select(x => x.Name).Aggregate((a,b) => $"{a} {b}") ?? string.Empty;
+    }
+    
 
-        foreach (var location in graph.Locations)
+    public async Task<List<Location>> GetSmartTourismSuggestionsAsync(PathFindingRequest request)
+    {
+        // Fetch places using the geoapify service
+        var results = await _geoapifyService.GetPlacesAsync(request.GeoApiRequest);
+
+        var startLocation = request.Start.ToLocationModel("Start");
+        var endLocation = request.End.ToLocationModel("End");
+
+        // Create locations and populate graph
+        var locations = results.Select(result => new Location
         {
-            var neighbors = graph.Edges.Where(x => x.From.Id == location.Id).ToList();
+            Id = Guid.NewGuid(),
+            Name = result.Name,
+            Latitude = result.Lat,
+            Longitude = result.Lon
+        }).ToList();
+        
+        //var locations = GenerateLocations();
+        
+        locations.AddRange([startLocation, endLocation]);
 
-            var endPoints = neighbors.Select(x => new LocationModel()
+        var graph = new PathFindingService(locations, new List<UpdatedEdge>());
+
+        // Build the sparse graph with nearest neighbors
+        var sparseEdges = graph.CreateSparseGraph(4);
+        Log.Information("Initial sparse graph edges");
+        //Log.Debug("Initial sparse graph edges: {@Edges}", sparseEdges);
+
+        // Update edges with actual distances and durations using Geoapify route data
+        var updatedEdges = new List<UpdatedEdge>();
+
+        /*foreach (var location in locations)
+        {
+            // Find nearest neighbors
+            var neighbors = sparseEdges
+                .Where(edge => edge.From.Id == location.Id)
+                .ToList();
+
+            // Create endpoint models for route requests
+            var endPoints = neighbors.Select(edge => new LocationModel
             {
-                Location = new[] { x.To.Latitude, x.To.Longitude },
+                Location = [edge.To.Latitude, edge.To.Longitude]
             }).ToList();
-            if (endPoints.Count == 0 )
-                continue;
-            var positions =
-                await _geoapifyService.GetPlaceRoutesAsync(new LocationModel() { Location = new[] { location.Latitude, location.Longitude }}, endPoints);
 
-            foreach (var position in positions.SourcesToTargets[0])
+            if (!endPoints.Any())
+                continue;
+
+            // Fetch routing data for the current location and its neighbors
+            var routeData = await _geoapifyService.GetPlaceRoutesAsync(
+                new LocationModel { Location = new[] { location.Latitude, location.Longitude } },
+                endPoints
+            );
+
+            // Update edges with distance and duration data
+            foreach (var (route, index) in routeData.SourcesToTargets[0].Select((route, index) => (route, index)))
             {
-                var neighbor = neighbors[position.TargetIndex].To;
-               
-                _updatedEdges.Add(new UpdatedEdge
+                var neighbor = neighbors[index].To;
+
+                updatedEdges.Add(new UpdatedEdge
                 {
                     From = location,
                     To = neighbor,
-                    Duration = position.Time ?? 0,
-                    Distance = position.Distance ?? 0
+                    Distance = route.Distance == null ? CalculateDistance(location, neighbor) : (double)route.Distance / 1000,
+                    Duration = route.Time ?? CalculateDistance(location, neighbor) / 50
                 });
             }
+        }*/
 
-            Log.Information("New data {@Data}", _updatedEdges);
-        }
+        //Log.Information("Updated edges: {@UpdatedEdges}", updatedEdges);
+
+        // Reinitialize PathFindingService with updated edges
+        graph = new PathFindingService(locations, sparseEdges);
+
+        // Optional: Log or process results further
+        Log.Information("Graph and locations successfully updated with route data.");
+
+        var result = graph.FindOptimalPath(startLocation.Id, endLocation.Id, request.Alpha, request.Beta, request.Travel);
         
-        Log.Information("Updated edges to get this {@UpdatedEdges}", _updatedEdges);
+        // Visualize the graph and the optimal path
+        SaveGraphVisualization(locations, sparseEdges, result);
 
-        return results;
+        return result;
     }
 
-    public void TestSolver()
+    public List<Location> GetTestAsync(PathFindingRequest request)
     {
-        // Sample locations
-        var locationA = new Location { Id = Guid.NewGuid(), Name = "A", Latitude = 0, Longitude = 0 };
-        var locationB = new Location { Id = Guid.NewGuid(), Name = "B", Latitude = 1, Longitude = 1 };
-        var locationC = new Location { Id = Guid.NewGuid(), Name = "C", Latitude = 2, Longitude = 2 };
-        var locationD = new Location { Id = Guid.NewGuid(), Name = "D", Latitude = 3, Longitude = 3 };
-        var locationE = new Location { Id = Guid.NewGuid(), Name = "E", Latitude = 4, Longitude = 4 };
+        // Central point coordinates
+        var locations = GenerateLocations();
 
-        // Map each location's hash to its category
-        var categories = new Dictionary<int, string>
-        {
-            { locationA.Id.GetHashCode(), "Default" },
-            { locationB.Id.GetHashCode(), "Park" },
-            { locationC.Id.GetHashCode(), "Museum" },
-            { locationD.Id.GetHashCode(), "Cafe" },
-            { locationE.Id.GetHashCode(), "Shopping" }
-        };
+        var graph = new PathFindingService(locations, new List<UpdatedEdge>());
+        
+        var sparseEdges = graph.CreateSparseGraph(4);
 
-        // Define edges between locations
-        var updatedEdges = new List<UpdatedEdge>
-        {
-            new UpdatedEdge { From = locationA, To = locationB, Duration = 20, Distance = 5, TimeSpend = 15 },
-            new UpdatedEdge { From = locationA, To = locationC, Duration = 30, Distance = 8, TimeSpend = 40 },
-            new UpdatedEdge { From = locationB, To = locationC, Duration = 10, Distance = 3, TimeSpend = 40 },
-            new UpdatedEdge { From = locationB, To = locationD, Duration = 25, Distance = 4, TimeSpend = 20 },
-            new UpdatedEdge { From = locationC, To = locationE, Duration = 30, Distance = 7, TimeSpend = 45 },
-            new UpdatedEdge { From = locationD, To = locationE, Duration = 15, Distance = 6, TimeSpend = 30 },
-            new UpdatedEdge { From = locationA, To = locationE, Duration = 50, Distance = 15, TimeSpend = 0 } // Direct path with no stop
-        };
+        graph = new PathFindingService(locations, sparseEdges);
+        
+        var result = graph.FindOptimalPath(locations[0].Id, locations[19].Id, 0.5, 0.5, request.Travel);
 
-        // Initialize the DijkstraSolver with the edges and categories
-        var solver = new DijkstraSolver(updatedEdges, categories);
+        // Visualize the graph and the optimal path
+        SaveGraphVisualization(locations, sparseEdges, result);
 
-        // Find the best route from A to E with total available time of 120 minutes
-        int start = locationA.Id.GetHashCode();
-        int end = locationE.Id.GetHashCode();
-        int totalAvailableTime = 120;
-
-        var bestRoute = solver.FindBestRoute(start, end, totalAvailableTime);
-
-        // Output the best route
-        Console.WriteLine("Best Route:");
-        foreach (var locationId in bestRoute)
-        {
-            Log.Warning(locationId == start ? "A" : locationId == locationB.Id.GetHashCode() ? "B" : 
-                              locationId == locationC.Id.GetHashCode() ? "C" : 
-                              locationId == locationD.Id.GetHashCode() ? "D" : "E");
-        }
+        return result;
     }
+
+
+
+    private void SaveGraphVisualization(List<Location> locations, List<UpdatedEdge> edges, List<Location> path)
+{
+    var plotModel = new PlotModel { Title = "Smart Tourism Graph with Optimal Path" };
+
+    // Add axes
+    plotModel.Axes.Add(new LinearAxis
+    {
+        Position = AxisPosition.Bottom,
+        Title = "Longitude",
+        MajorGridlineStyle = LineStyle.Solid,
+        MinorGridlineStyle = LineStyle.Dot
+    });
+    plotModel.Axes.Add(new LinearAxis
+    {
+        Position = AxisPosition.Left,
+        Title = "Latitude",
+        MajorGridlineStyle = LineStyle.Solid,
+        MinorGridlineStyle = LineStyle.Dot
+    });
+
+    // Add edges as line series
+    foreach (var edge in edges)
+    {
+        var lineSeries = new LineSeries { LineStyle = LineStyle.Solid, StrokeThickness = 1.0, Color = OxyColors.Gray };
+        lineSeries.Points.Add(new DataPoint(edge.From.Longitude, edge.From.Latitude));
+        lineSeries.Points.Add(new DataPoint(edge.To.Longitude, edge.To.Latitude));
+        plotModel.Series.Add(lineSeries);
+    }
+
+    // Add locations as scatter points
+    var scatterSeries = new ScatterSeries { MarkerType = MarkerType.Circle, MarkerSize = 4, MarkerFill = OxyColors.Blue };
+    foreach (var location in locations)
+    {
+        scatterSeries.Points.Add(new ScatterPoint(location.Longitude, location.Latitude));
+    }
+    plotModel.Series.Add(scatterSeries);
+
+    // Highlight the optimal path
+    var pathSeries = new LineSeries { LineStyle = LineStyle.Solid, StrokeThickness = 2.0, Color = OxyColors.Red };
+    foreach (var location in path)
+    {
+        pathSeries.Points.Add(new DataPoint(location.Longitude, location.Latitude));
+    }
+    plotModel.Series.Add(pathSeries);
+
+    // Save the plot as an image
+    var exporter = new OxyPlot.SkiaSharp.PngExporter { Width = 800, Height = 600 };
+    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "OptimalPathVisualization.png");
+    using (var stream = File.Create(filePath))
+    {
+        exporter.Export(plotModel, stream);
+    }
+
+    Log.Information("Graph visualization with optimal path saved at: {FilePath}", filePath);
+}
+    
+    /*private void SaveGraphVisualization(List<Location> locations, List<UpdatedEdge> edges, List<Location> path)
+    {
+        var plotModel = new PlotModel { Title = "Smart Tourism Graph with Optimal Path and Distances" };
+
+        // Add axes
+        plotModel.Axes.Add(new LinearAxis
+        {
+            Position = AxisPosition.Bottom,
+            Title = "Longitude",
+            MajorGridlineStyle = LineStyle.Solid,
+            MinorGridlineStyle = LineStyle.Dot
+        });
+        plotModel.Axes.Add(new LinearAxis
+        {
+            Position = AxisPosition.Left,
+            Title = "Latitude",
+            MajorGridlineStyle = LineStyle.Solid,
+            MinorGridlineStyle = LineStyle.Dot
+        });
+
+        // Add edges as line series and annotate distances
+        foreach (var edge in edges)
+        {
+            // Draw the edge
+            var lineSeries = new LineSeries { LineStyle = LineStyle.Solid, StrokeThickness = 1.0, Color = OxyColors.Gray };
+            lineSeries.Points.Add(new DataPoint(edge.From.Longitude, edge.From.Latitude));
+            lineSeries.Points.Add(new DataPoint(edge.To.Longitude, edge.To.Latitude));
+            plotModel.Series.Add(lineSeries);
+
+            // Annotate the distance
+            var midpointLongitude = (edge.From.Longitude + edge.To.Longitude) / 2;
+            var midpointLatitude = (edge.From.Latitude + edge.To.Latitude) / 2;
+
+            var distanceAnnotation = new TextAnnotation
+            {
+                TextPosition = new DataPoint(midpointLongitude, midpointLatitude),
+                Text = $"{edge.Distance:F2} km",
+                FontSize = 10,
+                Stroke = OxyColors.Transparent,
+                TextColor = OxyColors.Black
+            };
+            plotModel.Annotations.Add(distanceAnnotation);
+        }
+
+        // Add locations as scatter points
+        var scatterSeries = new ScatterSeries
+        {
+            MarkerType = MarkerType.Circle,
+            MarkerSize = 4,
+            MarkerFill = OxyColors.Blue
+        };
+        foreach (var location in locations)
+        {
+            scatterSeries.Points.Add(new ScatterPoint(location.Longitude, location.Latitude));
+        }
+        plotModel.Series.Add(scatterSeries);
+
+        // Highlight the start and end points
+        var startLocation = path.First();
+        var endLocation = path.Last();
+
+        var startSeries = new ScatterSeries
+        {
+            MarkerType = MarkerType.Star,
+            MarkerSize = 8,
+            MarkerFill = OxyColors.Green,
+            Title = "Start"
+        };
+        startSeries.Points.Add(new ScatterPoint(startLocation.Longitude, startLocation.Latitude));
+        plotModel.Series.Add(startSeries);
+
+        var endSeries = new ScatterSeries
+        {
+            MarkerType = MarkerType.Triangle,
+            MarkerSize = 8,
+            MarkerFill = OxyColors.Red,
+            Title = "End"
+        };
+        endSeries.Points.Add(new ScatterPoint(endLocation.Longitude, endLocation.Latitude));
+        plotModel.Series.Add(endSeries);
+
+        // Highlight the optimal path
+        var pathSeries = new LineSeries
+        {
+            LineStyle = LineStyle.Solid,
+            StrokeThickness = 2.0,
+            Color = OxyColors.Red,
+            Title = "Optimal Path"
+        };
+        foreach (var location in path)
+        {
+            pathSeries.Points.Add(new DataPoint(location.Longitude, location.Latitude));
+        }
+        plotModel.Series.Add(pathSeries);
+
+        // Save the plot as an image
+        var exporter = new OxyPlot.SkiaSharp.PngExporter { Width = 800, Height = 600 };
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "OptimalPathWithDistances.png");
+        using (var stream = File.Create(filePath))
+        {
+            exporter.Export(plotModel, stream);
+        }
+
+        Log.Information("Graph visualization with optimal path, distances, start, and end locations saved at: {FilePath}", filePath);
+    }*/
+    
+    
+    public static double CalculateDistance(Location p1, Location p2)
+    {
+        return Math.Sqrt(Math.Pow(p1.Longitude - p2.Longitude, 2) + Math.Pow(p1.Latitude - p2.Latitude, 2));
+    }
+    
+    private (double Latitude, double Longitude) GenerateRandomPoint(double lat, double lon, double radiusKm)
+    {
+        Random random = new Random();
+        double radiusEarthKm = 6371.0; // Earth's radius in kilometers
+
+        // Convert radius from kilometers to degrees
+        double radiusInDegrees = radiusKm / radiusEarthKm * (180 / Math.PI);
+
+        double u = random.NextDouble();
+        double v = random.NextDouble();
+        double w = radiusInDegrees * Math.Sqrt(u);
+        double t = 2 * Math.PI * v;
+        double x = w * Math.Cos(t);
+        double y = w * Math.Sin(t);
+
+        // Adjust the x-coordinate for the shrinking of the east-west distances
+        double new_x = x / Math.Cos(lat * Math.PI / 180);
+
+        double foundLongitude = lon + new_x;
+        double foundLatitude = lat + y;
+
+        return (foundLatitude, foundLongitude);
+    }
+
+    private List<Location> GenerateLocations()
+    {
+        double centralLatitude = 50.61762454932047 ;
+        double centralLongitude = 26.234978325243198;
+
+// Define the number of locations
+        int numberOfLocations = 20;
+
+// Define the radius in kilometers within which to generate random locations
+        double radiusInKm = 5.0;
+
+// Create a random number generator
+        Random random = new Random();
+
+// Generate locations
+        var locations = new List<Location>();
+        for (int i = 0; i < numberOfLocations; i++)
+        {
+            // Generate a random point within the radius
+            var randomPoint = GenerateRandomPoint(centralLatitude, centralLongitude, radiusInKm);
+
+            var location = new Location
+            {
+                Id = Guid.NewGuid(),
+                Name = $"Location_{i}",
+                Latitude = randomPoint.Latitude,
+                Longitude = randomPoint.Longitude,
+            };
+            locations.Add(location);
+        }
+
+        return locations;
+    }
+    
 }

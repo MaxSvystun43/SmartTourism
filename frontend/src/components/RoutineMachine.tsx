@@ -22,7 +22,8 @@ const createRoutineMachineLayer: React.FC<RoutingProps> = ({waypoints, onClick})
         draggableWaypoints: true,
         fitSelectedRoutes: true,
         showAlternatives: false,
-        createMarker: () => null, // No marker created
+        createMarker: () => null, // No marker created,
+        geocoder : L.Control.Geocoder.nominatim()
     });
 
     instance.on('routesfound', function (e: any) {

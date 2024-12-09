@@ -9,7 +9,6 @@ import {Route, Routes} from "react-router-dom";
 import Home from "./pages/Home.tsx";
 import Settings from "./pages/Settings.tsx";
 import Map from "./pages/Map.tsx";
-import {DiIntellij} from "react-icons/di";
 import DijstraTest from "./pages/DijstraTest.tsx";
 
 
