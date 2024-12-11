@@ -296,7 +296,7 @@ public class BidirectionalAStar
         int totalPoints = _points.Count;
         int pathLength = path.Count;
 
-        bool lengthValid = pathLength >= 0.3 * totalPoints && pathLength <= 0.6 * totalPoints;
+        bool lengthValid = pathLength >= 0.2 * totalPoints && pathLength <= 0.6 * totalPoints;
 
         if (!containsCatering)
             Console.WriteLine("Path does not include any Catering points.");

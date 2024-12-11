@@ -95,8 +95,7 @@ function DijstraMapTest() {
         
         const locations = {
             locations : markers.map((marker) => ({ location: [marker.lng, marker.lat] }))
-        }
-        console.log("FindBestRouteClick " + JSON.stringify(locations));        
+        }    
         
         const requestOptions = {
             method: 'POST',

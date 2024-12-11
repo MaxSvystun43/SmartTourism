@@ -25,7 +25,7 @@ public class SmartTourismService
         _geoapifyService = geoapifyService ?? throw new ArgumentNullException(nameof(geoapifyService));
     }
 
-    public async Task<string> Test(PathFindingRequest request)
+    public async Task<List<Point>?> Test(PathFindingRequest request)
     {
         // var points = new List<Point>
         // {
@@ -45,7 +45,7 @@ public class SmartTourismService
 
         var startLocation = request.Start.ToPoint("Start");
         var endLocation = request.End.ToPoint("End");
-        var points = results.Select(x => x.ToPoint()).ToList();
+        var points = results.Where(x => x.Name != null).Select(x => x.ToPoint()).ToList();
         points.AddRange([startLocation, endLocation]);
 
         
@@ -53,113 +53,8 @@ public class SmartTourismService
         
         var route = routeFinder.FindRouteUsingBidirectualAStar();
         
-        return route?.Select(x => x.Name).Aggregate((a,b) => $"{a} {b}") ?? string.Empty;
+        return route;
     }
-    
-
-    public async Task<List<Location>> GetSmartTourismSuggestionsAsync(PathFindingRequest request)
-    {
-        // Fetch places using the geoapify service
-        var results = await _geoapifyService.GetPlacesAsync(request.GeoApiRequest);
-
-        var startLocation = request.Start.ToLocationModel("Start");
-        var endLocation = request.End.ToLocationModel("End");
-
-        // Create locations and populate graph
-        var locations = results.Select(result => new Location
-        {
-            Id = Guid.NewGuid(),
-            Name = result.Name,
-            Latitude = result.Lat,
-            Longitude = result.Lon
-        }).ToList();
-        
-        //var locations = GenerateLocations();
-        
-        locations.AddRange([startLocation, endLocation]);
-
-        var graph = new PathFindingService(locations, new List<UpdatedEdge>());
-
-        // Build the sparse graph with nearest neighbors
-        var sparseEdges = graph.CreateSparseGraph(4);
-        Log.Information("Initial sparse graph edges");
-        //Log.Debug("Initial sparse graph edges: {@Edges}", sparseEdges);
-
-        // Update edges with actual distances and durations using Geoapify route data
-        var updatedEdges = new List<UpdatedEdge>();
-
-        /*foreach (var location in locations)
-        {
-            // Find nearest neighbors
-            var neighbors = sparseEdges
-                .Where(edge => edge.From.Id == location.Id)
-                .ToList();
-
-            // Create endpoint models for route requests
-            var endPoints = neighbors.Select(edge => new LocationModel
-            {
-                Location = [edge.To.Latitude, edge.To.Longitude]
-            }).ToList();
-
-            if (!endPoints.Any())
-                continue;
-
-            // Fetch routing data for the current location and its neighbors
-            var routeData = await _geoapifyService.GetPlaceRoutesAsync(
-                new LocationModel { Location = new[] { location.Latitude, location.Longitude } },
-                endPoints
-            );
-
-            // Update edges with distance and duration data
-            foreach (var (route, index) in routeData.SourcesToTargets[0].Select((route, index) => (route, index)))
-            {
-                var neighbor = neighbors[index].To;
-
-                updatedEdges.Add(new UpdatedEdge
-                {
-                    From = location,
-                    To = neighbor,
-                    Distance = route.Distance == null ? CalculateDistance(location, neighbor) : (double)route.Distance / 1000,
-                    Duration = route.Time ?? CalculateDistance(location, neighbor) / 50
-                });
-            }
-        }*/
-
-        //Log.Information("Updated edges: {@UpdatedEdges}", updatedEdges);
-
-        // Reinitialize PathFindingService with updated edges
-        graph = new PathFindingService(locations, sparseEdges);
-
-        // Optional: Log or process results further
-        Log.Information("Graph and locations successfully updated with route data.");
-
-        var result = graph.FindOptimalPath(startLocation.Id, endLocation.Id, request.Alpha, request.Beta, request.Travel);
-        
-        // Visualize the graph and the optimal path
-        SaveGraphVisualization(locations, sparseEdges, result);
-
-        return result;
-    }
-
-    public List<Location> GetTestAsync(PathFindingRequest request)
-    {
-        // Central point coordinates
-        var locations = GenerateLocations();
-
-        var graph = new PathFindingService(locations, new List<UpdatedEdge>());
-        
-        var sparseEdges = graph.CreateSparseGraph(4);
-
-        graph = new PathFindingService(locations, sparseEdges);
-        
-        var result = graph.FindOptimalPath(locations[0].Id, locations[19].Id, 0.5, 0.5, request.Travel);
-
-        // Visualize the graph and the optimal path
-        SaveGraphVisualization(locations, sparseEdges, result);
-
-        return result;
-    }
-
 
 
     private void SaveGraphVisualization(List<Location> locations, List<UpdatedEdge> edges, List<Location> path)

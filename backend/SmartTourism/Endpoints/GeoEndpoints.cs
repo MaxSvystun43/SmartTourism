@@ -57,7 +57,7 @@ internal static class GeoEndpoints
         });
 
 
-        app.MapPost("/api/geo/pathfindin/get-routes", async (
+        app.MapPost("/api/geo/pathfinding/get-routes", async (
             [FromServices] SmartTourismService service,
             [FromBody] PathFindingRequest request
         ) =>

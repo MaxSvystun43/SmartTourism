@@ -24,7 +24,6 @@ function Home () {
     
     return (
         <div>
-            <h2>Fucking Home Page</h2>
             {!location ? <button onClick={handleLocationClick}>Get Location</button> : null}
         </div>
     )

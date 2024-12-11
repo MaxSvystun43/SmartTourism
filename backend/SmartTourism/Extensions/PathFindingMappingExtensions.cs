@@ -44,7 +44,7 @@ public static class PathFindingMappingExtensions
         return new Point()
         {
             Id = Guid.NewGuid(),
-            Name = location.Name ?? Guid.NewGuid().ToString(),
+            Name = location.Name!,
             Latitude = location.Lat,
             Longitude = location.Lon,
             Categories = location.Categories
