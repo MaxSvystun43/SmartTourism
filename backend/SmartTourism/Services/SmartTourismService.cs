@@ -6,6 +6,7 @@ using OxyPlot.Annotations;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using Serilog;
+using SmartTourism.Database;
 using SmartTourism.Endpoints.Models;
 using SmartTourism.Extensions;
 using SmartTourism.PathFinding.Service;
@@ -19,28 +20,16 @@ namespace SmartTourism.Services;
 public class SmartTourismService
 {
     private readonly IGeoapifyService _geoapifyService;
+    private readonly SettingsService _settingsService;
 
-    public SmartTourismService(IGeoapifyService geoapifyService)
+    public SmartTourismService(IGeoapifyService geoapifyService, SettingsService settingsService)
     {
         _geoapifyService = geoapifyService ?? throw new ArgumentNullException(nameof(geoapifyService));
+        _settingsService = settingsService;
     }
 
     public async Task<List<Point>?> Test(PathFindingRequest request)
     {
-        // var points = new List<Point>
-        // {
-        //     new Point { Name = "A", Categories = "Start", Latitude = 40.7128, Longitude = -74.0060 },
-        //     new Point { Name = "B", Categories = "Restaurant", Latitude = 40.7308, Longitude = -73.9973 },
-        //     new Point { Name = "C", Categories = "Nature", Latitude = 40.7484, Longitude = -73.9857 },
-        //     new Point { Name = "D", Categories = "Nature", Latitude = 40.7580, Longitude = -73.9855 },
-        //     new Point { Name = "E", Categories = "End", Latitude = 40.7128, Longitude = -74.0059 },
-        //     new Point { Name = "F", Categories = "Restaurant", Latitude = 40.7192, Longitude = -74.0021 },
-        //     new Point { Name = "G", Categories = "Park", Latitude = 40.7407, Longitude = -73.9893 },
-        //     new Point { Name = "H", Categories = "Cultural", Latitude = 40.7295, Longitude = -73.9965 },
-        //     new Point { Name = "I", Categories = "Tourism", Latitude = 40.7411, Longitude = -73.9897 },
-        //     new Point { Name = "J", Categories = "Shopping", Latitude = 40.7589, Longitude = -73.9851 }
-        // };
-        
         var results = await _geoapifyService.GetPlacesAsync(request.GeoApiRequest);
 
         var startLocation = request.Start.ToPoint("Start");
@@ -49,7 +38,7 @@ public class SmartTourismService
         points.AddRange([startLocation, endLocation]);
 
         
-        var routeFinder = new RouteFinder(points, startLocation, endLocation);
+        var routeFinder = new RouteFinder(points, startLocation, endLocation, _settingsService.GetLastSetting());
         
         var route = routeFinder.FindRouteUsingBidirectualAStar();
         

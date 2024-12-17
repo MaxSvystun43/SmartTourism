@@ -1,4 +1,6 @@
-﻿using SmartTourism.RuleBase.Service.Extensions;
+﻿using SmartTourism.Database;
+using SmartTourism.Database.Models;
+using SmartTourism.RuleBase.Service.Extensions;
 using SmartTourism.RuleBase.Service.Models;
 using ILogger = Serilog.ILogger;
 
@@ -12,23 +14,23 @@ public class RouteFinder
     private readonly BacktrackService _backtrack;
     private readonly BidirectionalAStar _bidirectual;
 
-    public RouteFinder(List<Point> points, Point start, Point end)
+    public RouteFinder(List<Point> points, Point start, Point end, Setting? setting)
     {
         _points = points;
         _start = start;
         _end = end;
-        _backtrack = new BacktrackService(_points, _start, _end, CreateAdjacencyListUsingKNN(_points, (int)(_points.Count * 0.15))); // Example usage with KNN
+        _backtrack = new BacktrackService(_points, _start, _end, CreateAdjacencyListUsingKNN(_points, (int)(_points.Count * 0.3))); // Example usage with KNN
         
-        _bidirectual = new BidirectionalAStar(CreateBidirectionalAdjacencyListUsingKNN(_points, (int)(_points.Count * 0.15)), _points); // Example usage with KNN
+        _bidirectual = new BidirectionalAStar(CreateBidirectionalAdjacencyListUsingKNN(_points, (int)(_points.Count * 0.3)), _points, setting); // Example usage with KNN
     }
     
-    public RouteFinder(List<Point> points, Point start, Point end, int k)
+    public RouteFinder(List<Point> points, Point start, Point end, int k, Setting? setting)
     {
         _points = points;
         _start = start;
         _end = end;
         _backtrack = new BacktrackService(_points, _start, _end, CreateAdjacencyListUsingKNN(_points, k)); // Example usage with KNN
-        _bidirectual = new BidirectionalAStar(CreateBidirectionalAdjacencyListUsingKNN(_points, k), _points); // Example usage with KNN
+        _bidirectual = new BidirectionalAStar(CreateBidirectionalAdjacencyListUsingKNN(_points, k), _points, setting); // Example usage with KNN
     }
     
     public static Dictionary<string, List<string>> CreateAdjacencyListUsingKNN(List<Point> points, int k)

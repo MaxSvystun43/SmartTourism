@@ -16,7 +16,7 @@ const MenuList : React.FC<MenuListProps> = ({darkTheme}) => {
             </Menu.Item>
             <Menu.Item key="dijstra-test" icon={<AppstoreOutlined />}>
                 <Link to="/dijstra-test">
-                    Dijstra Test
+                    Shortest Path
                 </Link>
             </Menu.Item>
             <Menu.Item key="settings" icon={<SettingOutlined />}>

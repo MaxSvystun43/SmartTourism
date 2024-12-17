@@ -14,6 +14,11 @@ const GeoApiModal: React.FC<GeoApiFormProps> = ({ initialBias, initialFilter, on
         setIsModalVisible(false);
     };
 
+    const handleFormSubmit = (data: any) => {
+        onSubmit(data); // Pass the submitted data to the parent component
+        setIsModalVisible(false); // Close the modal
+    };
+
     return (
         <>
             <Button type="primary" onClick={showModal}>
@@ -27,7 +32,7 @@ const GeoApiModal: React.FC<GeoApiFormProps> = ({ initialBias, initialFilter, on
             >
                 <GeoApiForm   initialBias={initialBias}       // Pass bias as initial values
                               initialFilter={initialFilter}    // Pass filter as initial values
-                              onSubmit={onSubmit} // Handle data when form is submitted 
+                              onSubmit={handleFormSubmit} // Handle data when form is submitted 
                 />
             </Modal>
         </>

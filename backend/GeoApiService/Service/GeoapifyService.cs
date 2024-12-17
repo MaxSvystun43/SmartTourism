@@ -35,13 +35,13 @@ public class GeoapifyService : IGeoapifyService
             var newCategories = request.Categories.ToSnakeString();
             var newFilter = request.Filter.ToString();
             var newBias = request.Bias.ToString();
-            var response = await _geoapifyApi.GetPlacesAsync(newCategories, newFilter, newBias, request.Limit, ApiKey);
+            var response = await _geoapifyApi.GetPlacesAsync(newCategories, newFilter, newBias, request.Limit * 4, ApiKey);
             
             Log.Information("Response data from geoapify : {@Response}", response);
 
             resultPlaces.AddRange(response.Features.Select(p => p.ToPlacesToVisit()));
             
-            return resultPlaces;
+            return resultPlaces.Where(x => x.Name != null).OrderBy(x => x.Name).TakeLast(request.Limit).ToList();
         }
         catch (ApiException apiEx)
         {

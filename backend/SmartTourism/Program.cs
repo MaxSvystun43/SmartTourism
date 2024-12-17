@@ -4,11 +4,24 @@ using System.Text.Json.Serialization;
 using GeoApiService.Configuration;
 using GeoApiService.Extensions;
 using Serilog;
+using SmartTourism.Database;
 using SmartTourism.Endpoints;
 using SmartTourism.RuleBase.Service.Services;
 using SmartTourism.Services;
 
 Console.OutputEncoding = Encoding.UTF8;
+
+// Construct path dynamically in the "database" folder
+string baseDirectory = "D:/study_3/GeoApi/backend/SmartTourism";
+string databaseFolderPath = Path.Combine(baseDirectory, "database");
+
+// Ensure the "database" folder exists
+if (!Directory.Exists(databaseFolderPath))
+{
+    Directory.CreateDirectory(databaseFolderPath);
+}
+
+string databaseFilePath = Path.Combine(databaseFolderPath, "settings.db");
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -24,6 +37,8 @@ var configs = builder.Configuration.GetSection("GeoApiConfig").Get<HttpConfigura
 builder.Services.AddGeoapifyApi(configs);
 
 builder.Services.AddTransient<SmartTourismService>();
+builder.Services.AddScoped<SettingsService>(provider => 
+    new SettingsService(databaseFilePath));
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -51,4 +66,5 @@ app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
 app.UseHttpsRedirection();
 
 app.AddGeoEndpoints();
+app.AddSettingsEndpoints();
 app.Run();

@@ -133,3 +133,18 @@ button {
 .context-menu div:hover {
   background-color: #f0f0f0;
 }
+
+.right-panel {
+  flex: 1; /* Right-side panel takes 1 part of the grid */
+  height: 100%; /* Full height */
+  overflow-y: auto; /* Add vertical scrolling */
+  background-color: #f9f9f9; /* Optional background for better visibility */
+  padding: 20px; /* Add padding inside the panel */
+  border-left: 1px solid #ddd; /* Optional border */
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* Space between buttons */
+}

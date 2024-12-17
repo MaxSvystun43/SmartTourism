@@ -99,17 +99,17 @@ public class BacktrackService
         if (restaurantIndex >= 0)
         {
             var restaurantPosition = (double)restaurantIndex / route.Count;
-            if (restaurantPosition >= 0.4 && restaurantPosition <= 0.8)
+            if (restaurantPosition >= 0.2 && restaurantPosition <= 0.8)
                 score += 100; // Reward well-placed restaurants
         }
 
-        // Ensure exactly one restaurant is included
-        if (route.Count(p => p.Categories == "Catering") != 1)
-            return double.MinValue;
+        // // Ensure exactly one restaurant is included
+        // if (route.Count(p => p.Categories == "Catering") != 1)
+        //     return double.MinValue;
 
         // Add penalty for overly diverse or overly long routes
-        if (categories > 4 || route.Count > 6) // Arbitrary limits for this case
-            score -= 200;
+        // if (categories > 4 || route.Count > 6) // Arbitrary limits for this case
+        //     score -= 200;
 
         return score;
     }

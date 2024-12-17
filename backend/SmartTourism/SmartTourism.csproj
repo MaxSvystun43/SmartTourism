@@ -16,9 +16,14 @@
 
     <ItemGroup>
       <ProjectReference Include="..\GeoApiService\GeoApiService.csproj" />
+      <ProjectReference Include="..\SmartTourism.Database\SmartTourism.Database.csproj" />
       <ProjectReference Include="..\SmartTourism.DijstraSolver.Service\SmartTourism.DijstraSolver.Service.csproj" />
       <ProjectReference Include="..\SmartTourism.PathFinding.Service\SmartTourism.PathFinding.Service.csproj" />
       <ProjectReference Include="..\SmartTourism.RuleBase.Service\SmartTourism.RuleBase.Service.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="database\" />
     </ItemGroup>
 
 </Project>

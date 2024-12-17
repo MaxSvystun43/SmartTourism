@@ -146,10 +146,13 @@ function MapPage() {
     const [clickType, setClickType] = useState<MarkerType>(MarkerType.Start);
     const [,setAddressMap] = useState<Map<string, string>>(new Map());
     const [routePoints, setRoutePoints] = useState<Point[]>([]);
+    const [ ,setIsModalVisible] = useState(false);
 
     const handleFormSubmit = (data: any) => {
         console.log("Received data from GeoApiForm:", data);
         setFormData(data); // Save or process the form data as needed
+        handleSomeNewButtonClick();
+        setIsModalVisible(false);
     };
 
 
@@ -159,7 +162,16 @@ function MapPage() {
             setRefreshKey((prev) => prev + 1); // Increment the key to refresh RoutingMachine
         }
     };
-
+    const [mapKey, setMapKey] = useState(0); // Key to refresh the map
+    const handleRefresh = () => {
+        setMarkers([]); // Clear all markers
+        setStartMarkers(null); // Clear start marker
+        setEndMarkers(null); // Clear end marker
+        setMapKey((prevKey) => prevKey + 1); // Change the key to remount MapContainer
+        setRoutePoints([]); // Clear route points
+        setPlacesData([]); // Clear route points
+    };
+    
     function handleChangeClickType(type : MarkerType){
         console.log("Selected type:", type);
         setClickType(type)
@@ -233,53 +245,14 @@ function MapPage() {
         }
     };
 
-    const isValidLatLng = (lat: number | undefined, lng: number | undefined): boolean => {
-        return typeof lat === "number" && !isNaN(lat) && typeof lng === "number" && !isNaN(lng);
-    };
-
-    const validateRouteData = (
-        startMarker: L.LatLng | null,
-        endMarker: L.LatLng | null,
-        routePoints: Point[]
-    ): boolean => {
-        const issues: string[] = [];
-
-        console.log(JSON.stringify(routePoints))
-        // Validate start marker
-        if (!startMarker || !isValidLatLng(startMarker.lat, startMarker.lng)) {
-            issues.push("Invalid start marker");
-        }
-
-        // Validate end marker
-        if (!endMarker || !isValidLatLng(endMarker.lat, endMarker.lng)) {
-            issues.push("Invalid end marker");
-        }
-
-        // Validate each route point
-        routePoints.forEach((point, index) => {
-            if (!isValidLatLng(point.latitude, point.longitude)) {
-                issues.push(`Invalid route point at index ${index}: ${JSON.stringify(point)}`);
-            }
-        });
-
-        // Log the results
-        if (issues.length > 0) {
-            console.error("Route data validation failed with issues:", issues);
-            return false;
-        }
-
-        console.log("Route data is valid");
-        return true;
-    };
-
-    
+  
     function addInstructions(instructions : any){
         console.log("AddInstruct")
         setInstructions(instructions);
     }
 
     useEffect(() => {
-        if (routeVisible && markers.length > 0) {
+        if (markers.length > 0) {
             setRefreshKey((prev) => prev + 1); // Refresh the RoutingMachine
         }
     }, [markers]);
@@ -288,7 +261,7 @@ function MapPage() {
         <>
         <div className="map-grid">
             <div className="map-container">
-                <MapContainer center={[50.6199, 26.2516]} zoom={13} scrollWheelZoom={false}>
+                <MapContainer key={mapKey} center={[50.6199, 26.2516]} zoom={13} scrollWheelZoom={false}>
                     <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -343,7 +316,7 @@ function MapPage() {
                     {/*    waypoints={[startMarker, ...markers, endMarker]}*/}
                     {/*    onClick={addInstructions}/>}*/}
 
-                    {routePoints.length > 0 && startMarker && endMarker && validateRouteData(startMarker, endMarker, routePoints) && (
+                    {routePoints.length > 0 && startMarker && endMarker && (
                         <RoutingMachine
                             key={refreshKey}
                             waypoints={[
@@ -356,37 +329,21 @@ function MapPage() {
                     )}
                 </MapContainer>
             </div>
+            <div className="right-panel">
                 <div className="button-container">
                     <TypeDropdown onChoose={handleChangeClickType}/>
                     
                     <Button onClick={handleRouteButtonClick} disabled={markers.length === 0}>
                         Run route
-                    </Button>                    
+                    </Button>                  
                     
-                    {routeVisible && (instructions !== null || instructions !== "") && (
-                        <div className="route-display">
-                            <DirectionList instructions={instructions} />
-                        </div>
-                    )}
+
                     <Button onClick={handleGetRoutePoints}>
                         Find route
                     </Button>
-                    {/*{(data !== undefined) && (*/}
-                    {/*    <div>*/}
-                    {/*        <ul>*/}
-                    {/*            {data.map((route, idx) =>(*/}
-                    {/*                <li key={idx}>*/}
-                    {/*                    {JSON.stringify(route)}*/}
-                    {/*                </li>*/}
-                    {/*            ))}*/}
-                    {/*        </ul>*/}
-                    {/*    </div>*/}
-                    {/*)}    */}
-                    <Button onClick={handleSomeNewButtonClick}>
-                        Find Places
-                    </Button>
                     <GeoApiProvider>
-                        <GeoApiModal onSubmit={handleFormSubmit} 
+                        <GeoApiModal 
+                                onSubmit={handleFormSubmit}
                          initialBias={
                          startMarker && endMarker
                              ? calculateMidpoint(startMarker, endMarker)
@@ -399,9 +356,18 @@ function MapPage() {
                             latitude : markers[0]?.lat ?? startMarker?.lat ?? endMarker?.lat ?? 26.2516,
                             radiusInMeters : 5000
                         }}
-                        />
+                        />                        
                     </GeoApiProvider>
+                    <Button type="primary" onClick={handleRefresh} style={{ marginBottom: "10px", width: "151.45px" }}>
+                        Refresh Map
+                    </Button>
+                    {(instructions !== null || instructions !== "") && (
+                        <div className="route-display">
+                            <DirectionList instructions={instructions} />
+                        </div>
+                    )}
                 </div>
+            </div>
             </div>
         </>
     );

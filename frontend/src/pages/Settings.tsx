@@ -1,19 +1,60 @@
-﻿import { useState } from "react";
-import { Checkbox, InputNumber, Button, Typography, Space } from "antd";
+﻿import { useState, useEffect } from "react";
+import { Checkbox, InputNumber, Button, Typography, Space, message } from "antd";
 
 const { Title } = Typography;
 
+interface Setting {
+    visitRestaurant: boolean;
+    lowerLimit: number | null;
+    upperLimit: number | null;
+}
+
+interface NumberState {
+    lowerLimit: number | null;
+    upperLimit: number | null;
+}
+
 function Settings() {
-    // State for checkboxes
     const [checkboxes, setCheckboxes] = useState({
         restaurantVisit: false,
     });
 
-    // State for number inputs
-    const [numbers, setNumbers] = useState({
+    const [numbers, setNumbers] = useState<NumberState>({
         lowerLimit: null,
         upperLimit: null,
     });
+
+    const [loading, setLoading] = useState(false);
+
+    // Fetch settings on component mount
+    useEffect(() => {
+        const fetchSettings = async () => {
+            setLoading(true);
+            try {
+                const response = await fetch("https://localhost:7148/settings");
+                if (!response.ok) throw new Error("Failed to fetch settings");
+
+                const data: Setting = await response.json();
+
+                // Set fetched data into state
+                setCheckboxes({
+                    restaurantVisit: data.visitRestaurant,
+                });
+                setNumbers({
+                    lowerLimit: data.lowerLimit,
+                    upperLimit: data.upperLimit,
+                });
+                message.success("Settings loaded successfully!");
+            } catch (error) {
+                message.error("Error loading settings.");
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchSettings();
+    }, []);
 
     // Handler for checkboxes
     const handleCheckboxChange = (name: string, checked: boolean) => {
@@ -25,24 +66,36 @@ function Settings() {
 
     // Handler for number inputs
     const handleNumberChange = (name: string, value: number | null) => {
-        if (value !== null && value >= 0) {
-            setNumbers((prevState) => ({
-                ...prevState,
-                [name]: value,
-            }));
-        } else {
-            setNumbers((prevState) => ({
-                ...prevState,
-                [name]: null, // Reset to null if invalid
-            }));
-        }
+        setNumbers((prevState) => ({
+            ...prevState,
+            [name]: value !== null && value >= 0 ? value : null,
+        }));
     };
 
     // Handler for update button
-    const handleUpdate = () => {
-        console.log("Checkboxes:", checkboxes);
-        console.log("Numbers:", numbers);
-        alert("Settings updated!");
+    const handleUpdate = async () => {
+        const updatedSettings: Setting = {
+            visitRestaurant: checkboxes.restaurantVisit,
+            lowerLimit: numbers.lowerLimit,
+            upperLimit: numbers.upperLimit,
+        };
+
+        try {
+            const response = await fetch("https://localhost:7148/add-settings", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(updatedSettings),
+            });
+
+            if (!response.ok) throw new Error("Failed to update settings");
+
+            message.success("Settings updated successfully!");
+        } catch (error) {
+            message.error("Error updating settings.");
+            console.error(error);
+        }
     };
 
     return (
@@ -50,6 +103,9 @@ function Settings() {
             <Title level={2}>Settings Page</Title>
 
             <Space direction="vertical" size="large">
+                {/* Loading Indicator */}
+                {loading ? <div>Loading settings...</div> : null}
+
                 {/* Checkboxes */}
                 <div>
                     <Checkbox

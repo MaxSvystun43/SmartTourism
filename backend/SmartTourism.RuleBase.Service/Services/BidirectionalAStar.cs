@@ -1,4 +1,6 @@
-﻿using SmartTourism.RuleBase.Service.Extensions;
+﻿using SmartTourism.Database;
+using SmartTourism.Database.Models;
+using SmartTourism.RuleBase.Service.Extensions;
 using SmartTourism.RuleBase.Service.Models;
 
 namespace SmartTourism.RuleBase.Service.Services;
@@ -7,11 +9,18 @@ public class BidirectionalAStar
 {
     private readonly Dictionary<string, List<string>> _adjacencyList;
     private readonly List<Point> _points;
+    private readonly Setting _setting;
 
-    public BidirectionalAStar(Dictionary<string, List<string>> adjacencyList, List<Point> points)
+    public BidirectionalAStar(Dictionary<string, List<string>> adjacencyList, List<Point> points, Setting? setting)
     {
         _adjacencyList = adjacencyList;
         _points = points;
+        _setting = setting ?? new Setting()
+        {
+            VisitRestaurant = false,
+            UpperLimit = 80,
+            LowerLimit = 30
+        };
     }
 
     
@@ -36,7 +45,14 @@ public class BidirectionalAStar
         }
 
         Console.WriteLine("No valid path found with Standard A*. Falling back to Approximation with Graph Search...");
-        return RunApproximationWithGraphSearch(start, end);
+        path =  RunApproximationWithGraphSearch(start, end);
+        if (path != null)
+        {
+            Console.WriteLine("Valid path found with ApproximationWithGraphSearch.");
+            return path;
+        }
+
+        return RunDijkstra(start, end);
     }
     
     private List<Point> RunApproximationWithGraphSearch(Point start, Point end)
@@ -287,22 +303,70 @@ public class BidirectionalAStar
 
     }
     
+    private List<Point> RunDijkstra(Point start, Point end)
+    {
+        var openSet = new PriorityQueue<Node, double>();
+        var visited = new Dictionary<string, Node>();
+
+        var startNode = new Node { Name = start.Name, GScore = 0 };
+        openSet.Enqueue(startNode, 0);
+        visited[start.Name] = startNode;
+
+        while (openSet.Count > 0)
+        {
+            var current = openSet.Dequeue();
+
+            if (current.Name == end.Name)
+            {
+                return ReconstructStandardPath(current);
+            }
+
+            if (!_adjacencyList.TryGetValue(current.Name, out var neighbors)) continue;
+
+            foreach (var neighborName in neighbors)
+            {
+                var neighborPoint = GetPoint(neighborName);
+                if (neighborPoint == null) continue;
+
+                var newGScore = current.GScore + PointExtensions.CalculateDistance(
+                    GetPoint(current.Name).Latitude, GetPoint(current.Name).Longitude,
+                    neighborPoint.Latitude, neighborPoint.Longitude);
+
+                if (visited.ContainsKey(neighborName) && newGScore >= visited[neighborName].GScore)
+                    continue;
+
+                var neighborNode = new Node
+                {
+                    Name = neighborName,
+                    GScore = newGScore,
+                    Parent = current
+                };
+
+                visited[neighborName] = neighborNode;
+                openSet.Enqueue(neighborNode, newGScore);
+            }
+        }
+
+        Console.WriteLine("No path found with Dijkstra's Algorithm.");
+        return null;
+    }
+    
     private bool IsValidPath(List<Point> path)
     {
         // Check if the path contains at least one Catering point
-        bool containsCatering = path.Any(point => point.Categories.Contains("Catering"));
+        bool containsCatering = _setting.VisitRestaurant != true || path.Any(point => point.Categories.Contains("Catering"));
 
         // Check if the path length is within 40% to 60% of total points
         int totalPoints = _points.Count;
         int pathLength = path.Count;
 
-        bool lengthValid = pathLength >= 0.2 * totalPoints && pathLength <= 0.6 * totalPoints;
+        bool lengthValid = pathLength >= (_setting.LowerLimit/100) * totalPoints && pathLength <= (_setting.UpperLimit/100) * totalPoints;
 
         if (!containsCatering)
             Console.WriteLine("Path does not include any Catering points.");
 
         if (!lengthValid)
-            Console.WriteLine($"Path length {pathLength} is not within the valid range (40% to 60% of {totalPoints}).");
+            Console.WriteLine($"Path length {pathLength} is not within the valid range ({_setting.LowerLimit}% to {_setting.UpperLimit}% of {totalPoints}).");
 
         return containsCatering && lengthValid;
     }
