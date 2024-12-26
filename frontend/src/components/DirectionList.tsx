@@ -1,4 +1,5 @@
-﻿import DirectionStep from "../types/DirectionStep.tsx";
+﻿import DirectionStep from "../types/DirectionStep.ts";
+import React from "react";
 
 
 const DirectionsList: React.FC<{ instructions:string }> = ({ instructions }) => {
@@ -9,13 +10,13 @@ const DirectionsList: React.FC<{ instructions:string }> = ({ instructions }) => 
     return(
     <div>
         <h2>Route Directions</h2>
-        {/*<ul>*/}
-        {/*    {directionsArray.map((step, index) => (*/}
-        {/*        <li key={index}>*/}
-        {/*            <strong>{step.text}</strong> ({step.distance} m, {Math.round(step.time)} sec)*/}
-        {/*        </li>*/}
-        {/*    ))}*/}
-        {/*</ul>*/}
+        <ul>
+            {directionsArray.map((step, index) => (
+                <li key={index}>
+                   {step.text}({step.distance} m, {((step.time)/60).toFixed(2)} min)
+                </li>
+            ))}
+        </ul>
     </div>
         
 )}

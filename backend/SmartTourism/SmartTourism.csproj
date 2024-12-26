@@ -8,17 +8,22 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.10" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0"/>
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0"/>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Extensions\" />
+        <PackageReference Include="OxyPlot.Core" Version="2.2.0" />
+        <PackageReference Include="OxyPlot.SkiaSharp" Version="2.2.0" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\GeoApiService\GeoApiService.csproj" />
+      <ProjectReference Include="..\SmartTourism.Database\SmartTourism.Database.csproj" />
+      <ProjectReference Include="..\SmartTourism.DijstraSolver.Service\SmartTourism.DijstraSolver.Service.csproj" />
       <ProjectReference Include="..\SmartTourism.PathFinding.Service\SmartTourism.PathFinding.Service.csproj" />
+      <ProjectReference Include="..\SmartTourism.RuleBase.Service\SmartTourism.RuleBase.Service.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="database\" />
     </ItemGroup>
 
 </Project>

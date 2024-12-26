@@ -43,6 +43,7 @@ public record Properties
     /// <summary>
     /// The name of the geographical feature.
     /// </summary>
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
     /// <summary>
@@ -116,11 +117,6 @@ public record Properties
     public Catering Catering { get; set; }
 
     /// <summary>
-    /// The building information of the geographical feature.
-    /// </summary>
-    public Building Building { get; set; }
-
-    /// <summary>
     /// The unique identifier of the geographical feature.
     /// </summary>
     public string PlaceId { get; set; }
@@ -150,87 +146,6 @@ public record Datasource
     /// The URL of the data source.
     /// </summary>
     public string Url { get; set; }
-
-    /// <summary>
-    /// The raw data from the data source.
-    /// </summary>
-    public Raw Raw { get; set; }
-}
-
-/// <summary>
-/// Represents the raw data from the data source.
-/// </summary>
-public record Raw
-{
-    /// <summary>
-    /// The name of the geographical feature.
-    /// </summary>
-    public string Name { get; set; }
-
-    /// <summary>
-    /// The phone number of the geographical feature.
-    /// </summary>
-    public string Phone { get; set; }
-
-    /// <summary>
-    /// The OpenStreetMap (OSM) ID of the geographical feature.
-    /// </summary>
-    public long OsmId { get; set; }
-
-    /// <summary>
-    /// The amenity type of the geographical feature.
-    /// </summary>
-    public string Amenity { get; set; }
-
-    /// <summary>
-    /// The cuisine type of the geographical feature.
-    /// </summary>
-    public string Cuisine { get; set; }
-
-    /// <summary>
-    /// The Ukrainian name of the geographical feature.
-    /// </summary>
-    public string NameUk { get; set; }
-
-    /// <summary>
-    /// The website URL of the geographical feature.
-    /// </summary>
-    public string Website { get; set; }
-
-    /// <summary>
-    /// The type of building (e.g., residential, commercial).
-    /// </summary>
-    public string Building { get; set; }
-
-    /// <summary>
-    /// The type of OpenStreetMap object (e.g., node, way, relation).
-    /// </summary>
-    public string OsmType { get; set; }
-
-    /// <summary>
-    /// The street address of the geographical feature.
-    /// </summary>
-    public string AddrStreet { get; set; }
-
-    /// <summary>
-    /// The opening hours of the geographical feature.
-    /// </summary>
-    public string OpeningHours { get; set; }
-
-    /// <summary>
-    /// The number of levels in the building.
-    /// </summary>
-    public int BuildingLevels { get; set; }
-
-    /// <summary>
-    /// Indicates whether the geographical feature has internet access.
-    /// </summary>
-    public string InternetAccess { get; set; }
-
-    /// <summary>
-    /// The house number of the geographical feature.
-    /// </summary>
-    public string AddrHouseNumber { get; set; }
 }
 
 /// <summary>
@@ -264,17 +179,6 @@ public record Catering
     /// The cuisine type of the geographical feature.
     /// </summary>
     public string Cuisine { get; set; }
-}
-
-/// <summary>
-/// Represents the building information of a geographical feature.
-/// </summary>
-public record Building
-{
-    /// <summary>
-    /// The number of levels in the building.
-    /// </summary>
-    public int Levels { get; set; }
 }
 
 /// <summary>

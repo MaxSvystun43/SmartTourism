@@ -1,8 +1,8 @@
-﻿using GeoApiService.Model.Requests;
+﻿namespace SmartTourism.Endpoints.Models;
 
-namespace SmartTourism.Endpoints.Models;
-
-public record FindRoute
+public class FindRoute
 {
-    public List<LocationModel> Locations { get; set; }
+    public required Location Start { get; set; }
+    public required Location End { get; set; }
+    public List<Location> Waypoints { get; set; } = []; 
 }

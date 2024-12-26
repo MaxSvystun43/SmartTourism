@@ -2,7 +2,12 @@
 using GeoApiService.Model.Requests;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
+using SmartTourism.DijstraSolver.Service;
 using SmartTourism.Endpoints.Models;
+using SmartTourism.Extensions;
+using SmartTourism.PathFinding.Service.Models;
+using SmartTourism.Services;
+using Location = SmartTourism.PathFinding.Service.Models.Location;
 
 namespace SmartTourism.Endpoints;
 
@@ -15,28 +20,63 @@ internal static class GeoEndpoints
             [FromServices] IGeoapifyService service
         ) =>
         {
+            Log.Information("GeoEndpoints request {@Request}", request);
             var results = await service.GetPlacesAsync(request);
-            return Results.Ok(results.Features);
+            return Results.Ok(results);
         });
         
-        app.MapPost("/api/geo/get-routes", async (
+        app.MapPost("/api/geo/dijstra/get-routes", async (
             [FromServices] IGeoapifyService service,
             [FromBody] FindRoute request
         ) =>
         {
             Log.Information("GeoEndpoints request {@Request}", request);
-            var results = await service.GetPlaceRoutesAsync(request.Locations);
+            var locations = request.Waypoints;
+            locations.AddRange([request.Start, request.End]);
             
-            var routeFinder = new DijkstraSorver(results);
+            var results = await service.GetPlaceRoutesAsync(locations.Select(x => x.Location));
+            
+            var routeFinder = new DijkstraTestSolver(results.SourcesToTargets.ToDijstraModel(locations));
             
             int startNode = 0; // Starting position (ID)
-            int endNode = request.Locations.Count - 1;   // Ending position (ID)
-            var waypoints =  Enumerable.Range(1, request.Locations.Count - 1).ToList();; // Other waypoints to visit
+            int endNode = request.Waypoints.Count - 1;   // Ending position (ID)
+            var waypoints =  Enumerable.Range(1, request.Waypoints.Count - 1).ToList(); // Other waypoints to visit
             var shortestPath = routeFinder.FindShortestRoute(startNode, endNode, waypoints);
+
+            var resultRoute = new List<LocationModel>();
+            
+            foreach (var node in shortestPath[..^1])
+            {
+                resultRoute.Add(request.Waypoints[node]);
+            }
             
             Log.Information("Result path shortest {@Result}", shortestPath);
-            return Results.Ok(results);
+            Log.Debug("Result shortest route {@Result}", resultRoute);
+            
+            return Results.Ok(resultRoute);
         });
+
+
+        app.MapPost("/api/geo/pathfinding/get-routes", async (
+            [FromServices] SmartTourismService service,
+            [FromBody] PathFindingRequest request
+        ) =>
+        {
+            var data = await service.Test(request);
+            
+            return Results.Ok(data);
+        });
+        
+        // app.MapGet("/api/geo/pathfindin/test", (
+        //     [FromServices] SmartTourismService service
+        // ) =>
+        // {
+        //     var data = service.Test();
+        //     
+        //     return Results.Ok(data);
+        // });
+
+
 
         return app;
     }

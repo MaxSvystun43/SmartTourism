@@ -1,11 +1,16 @@
 ﻿import * as L from "leaflet";
 import {createControlComponent} from "@react-leaflet/core";
 import "leaflet-routing-machine";
+import React from "react";
 
-// Define the routing control component without unnecessary props
+interface RoutingProps {
+    waypoints?: L.LatLng[];
+    onClick: (distance: string) => void;
+}
 
 
-const createRoutineMachineLayer = ({waypoints, onClick}) => {
+const createRoutineMachineLayer: React.FC<RoutingProps> = ({waypoints, onClick}) => {
+    // @ts-ignore
     const instance = L.Routing.control({
         waypoints: waypoints,
         lineOptions: {
@@ -17,18 +22,20 @@ const createRoutineMachineLayer = ({waypoints, onClick}) => {
         draggableWaypoints: true,
         fitSelectedRoutes: true,
         showAlternatives: false,
-        createMarker: () => null, // No marker created
+        createMarker: () => null, // No marker created,
+        geocoder : L.Control.Geocoder.nominatim()
     });
 
-    instance.on('routesfound', function (e : any) {
+    instance.on('routesfound', function (e: any) {
         const distance = e.routes[0].instructions;
-        onClick(distance);
+        onClick(JSON.stringify(distance));
     });
 
     return instance;
 };
 
 
-const RoutingMachine = createControlComponent(createRoutineMachineLayer);
+// @ts-ignore
+const RoutingMachine : React.FC<RoutingProps> = createControlComponent(createRoutineMachineLayer);
 
 export default RoutingMachine;

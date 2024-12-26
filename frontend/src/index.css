@@ -109,6 +109,42 @@ button {
   border-radius: 5px;
 }
 
-/*.leaflet-control-container .leaflet-routing-container-hide {*/
-/*  display: none;*/
-/*}*/
+.leaflet-control-container .leaflet-routing-container-hide {
+  display: none;
+}
+
+
+.context-menu {
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 5px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.context-menu div {
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+}
+
+.context-menu div:hover {
+  background-color: #f0f0f0;
+}
+
+.right-panel {
+  flex: 1; /* Right-side panel takes 1 part of the grid */
+  height: 100%; /* Full height */
+  overflow-y: auto; /* Add vertical scrolling */
+  background-color: #f9f9f9; /* Optional background for better visibility */
+  padding: 20px; /* Add padding inside the panel */
+  border-left: 1px solid #ddd; /* Optional border */
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* Space between buttons */
+}

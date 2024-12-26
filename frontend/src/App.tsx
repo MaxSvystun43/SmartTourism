@@ -6,10 +6,9 @@ import {useState} from "react";
 import ToggleThemeButton from "./components/ToggleThemeButton.tsx";
 import { MenuUnfoldOutlined, MenuFoldOutlined} from '@ant-design/icons'
 import {Route, Routes} from "react-router-dom";
-import Home from "./pages/Home.tsx";
 import Settings from "./pages/Settings.tsx";
-import FindRoute from "./pages/FindRoute.tsx";
-import Map from "./pages/Map.tsx";
+import MapPage from "./pages/MapPage.tsx";
+import DijstraTest from "./pages/DijstraTest.tsx";
 
 
 const { Header, Sider} = Layout;
@@ -51,8 +50,8 @@ function App() {
                         icon={collapsed ? <MenuUnfoldOutlined/> : <MenuFoldOutlined/>} />
                 </Header>
                 <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/map" element={<Map/>} />
+                    <Route path="/" element={<MapPage/>} />
+                    <Route path="/dijstra-test" element={<DijstraTest/>} />
                     {/*<Route path="/find-route" element={<FindRoute/>} />*/}
                     <Route path="/settings" element={<Settings />} />
                 </Routes>
