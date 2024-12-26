@@ -12,7 +12,8 @@ namespace GeoApiService.Service;
 public class GeoapifyService : IGeoapifyService
 {
     private readonly IGeoapifyApi _geoapifyApi;
-    private const string ApiKey = "d14bbbf1347b41b288e27f6d9432932e"; 
+    const string ApiKey = "*********************"; 
+
     
     public GeoapifyService(IGeoapifyApi geoapifyApi)
     {
@@ -124,6 +125,7 @@ public class GeoapifyService : IGeoapifyService
             throw;
         }
     }
+
 
     private async Task<IReadOnlyList<PlacesToVisit>> GetCafeteriaPlaces(GeoApiRequest request)
     {
